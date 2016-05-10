@@ -43,7 +43,7 @@ if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 
 # Default compiler flags
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic -Wextra --std=c++11 -fcx-fortran-rules -fcx-limited-range")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic -Wextra --std=c++11 -fcx-fortran-rules -fcx-limited-range -fext-numeric-literals")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fomit-frame-pointer -ffast-math -Wall --std=c11")
 
 # If profiling, always include debug information
@@ -88,9 +88,9 @@ endif()
 
 set(MOMEMTA_SOURCES
     "modules/BinnedTransferFunctionOnEnergy.cc"
-    "modules/BlockB.cc"
+    #"modules/BlockB.cc"
     "modules/BlockD.cc"
-    "modules/BlockF.cc"
+    #"modules/BlockF.cc"
     "modules/Boost.cc"
     "modules/BreitWignerGenerator.cc"
     "modules/FlatTransferFunctionOnP.cc"
@@ -133,6 +133,7 @@ include_directories(SYSTEM ${ROOT_INCLUDE_DIR})
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(momemta LINK_PUBLIC dl)
+target_link_libraries(momemta LINK_PUBLIC quadmath)
 target_link_libraries(momemta LINK_PRIVATE cuba)
 target_link_libraries(momemta LINK_PRIVATE ${LUA_LIBRARIES})
 target_link_libraries(momemta LINK_PUBLIC pthread)
@@ -152,7 +153,7 @@ add_subdirectory(MatrixElements)
 target_link_libraries(momemta LINK_PRIVATE me_pp_ttx_fully_leptonic)
 target_link_libraries(momemta LINK_PRIVATE "-Wl,--whole-archive $<TARGET_FILE:me_pp_ttx_fully_leptonic> -Wl,--no-whole-archive")
 
-add_library(empty_module SHARED "modules/EmptyModule.cc")
+#add_library(empty_module SHARED "modules/EmptyModule.cc")
 
 # Example executables
 

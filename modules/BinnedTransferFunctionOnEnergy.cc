@@ -124,7 +124,7 @@ class BinnedTransferFunctionOnEnergy: public Module {
             // The bin number is a ROOT "global bin number" using a 1D representation of the TH2
             const int bin = m_th2->FindFixBin(std::min(gen_E, m_fallBackEgenMax), delta);
             // Compute TF*jacobian, where the jacobian includes the transformation of [0,1]->[range_min,range_max] and dE/d|P|
-            *TF_times_jacobian = m_th2->GetBinContent(bin) * range * dE_over_dP(*output);
+            *TF_times_jacobian = static_cast<double>(m_th2->GetBinContent(bin) * range * dE_over_dP(*output));
         }
 
         virtual size_t dimensions() const override {

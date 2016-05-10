@@ -29,7 +29,7 @@ else
     }
 end
 
-USE_PERM = true
+USE_PERM = false
 
 if USE_PERM then
   -- Use permutator module to permutate input particles 0 and 2 using the MC

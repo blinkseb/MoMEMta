@@ -26,6 +26,7 @@
 #include <string>
 
 #include <momemta/Types.h>
+#include <boost/multiprecision/float128.hpp> 
 
 #define SQ(x) (x*x)
 #define CB(x) (x*x*x)
@@ -43,23 +44,23 @@ template<typename T> T sign(const T x){
 }
 
 // Used to compute Jacobian for Transfer Function
-inline double dE_over_dP(const LorentzVector& v){
-    const double rad = SQ(v.E()) - SQ(v.M());
+inline boost::multiprecision::float128 dE_over_dP(const LorentzVector& v){
+    const boost::multiprecision::float128 rad = SQ(v.E()) - SQ(v.M());
     if (rad <= 0)
         return 0.;
     else
-        return v.E() / std::sqrt(rad);
+        return v.E() / sqrt(rad);
 }
 
 // If the NWA is used for a particle, a multiplication factor has to be introduced
 // because of the integrated-out delta function
-inline double jacobianNWA(const double mass, const double width){
+inline boost::multiprecision::float128 jacobianNWA(const boost::multiprecision::float128 mass, const boost::multiprecision::float128 width){
     return ( M_PI/2. + atan(mass / width) ) * mass * width;
 }
 
 // Compute cos(x +- 2*pi/3) in a more "analytical" way (pm = +- 1)
 // Useful for solveCubic
-inline double cosXpm2PI3(const double x, const double pm){
+inline boost::multiprecision::float128 cosXpm2PI3(const boost::multiprecision::float128 x, const boost::multiprecision::float128 pm){
     return -0.5*( cos(x) + pm * sin(x) * sqrt(3.) );
 }
 
@@ -67,13 +68,13 @@ inline double cosXpm2PI3(const double x, const double pm){
 // Uses a numerically more stable way than the "classroom" method.
 // Handles special cases a=0 and/or b=0.
 // Appends the solutions to the std::vector roots, making no attempt to check whether the vector is empty.
-// Double roots are present twice.
+// boost::multiprecision::float128 roots are present twice.
 // If verbose is true (default is false), the solutions are printed,
 // as well as the polynomial evaluated on these solutions
 //
 // See https://fr.wikipedia.org/wiki/Équation_du_second_degré#Calcul_numérique
-bool solveQuadratic(const double a, const double b, const double c,
-        std::vector<double>& roots,
+bool solveQuadratic(const boost::multiprecision::float128 a, const boost::multiprecision::float128 b, const boost::multiprecision::float128 c,
+        std::vector<boost::multiprecision::float128>& roots,
         bool verbose = false
         );
 
@@ -85,8 +86,8 @@ bool solveQuadratic(const double a, const double b, const double c,
 // as well as the polynomial evaluated on these solutions
 //
 // Inspired by "Numerical Recipes" (Press, Teukolsky, Vetterling, Flannery), 2007 Cambridge University Press
-bool solveCubic(const double a, const double b, const double c, const double d,
-        std::vector<double>& roots,
+bool solveCubic(const boost::multiprecision::float128 a, const boost::multiprecision::float128 b, const boost::multiprecision::float128 c, const boost::multiprecision::float128 d,
+        std::vector<boost::multiprecision::float128>& roots,
         bool verbose = false
         );
 
@@ -104,8 +105,8 @@ bool solveCubic(const double a, const double b, const double c, const double d,
 // then to try and factorize this quartic into two quadratic equations, which each then gives up to two roots.
 // The factorization relies on solving a cubic equation (which is always possible),
 // then taking the square root of one of these solution (ie there must be a positive solution).
-bool solveQuartic(const double a, const double b, const double c, const double d, const double e,
-        std::vector<double>& roots,
+bool solveQuartic(const boost::multiprecision::float128 a, const boost::multiprecision::float128 b, const boost::multiprecision::float128 c, const boost::multiprecision::float128 d, const boost::multiprecision::float128 e,
+        std::vector<boost::multiprecision::float128>& roots,
         bool verbose = false
         );
 
@@ -122,9 +123,9 @@ bool solveQuartic(const double a, const double b, const double c, const double d
 //   - find solutions for E1
 // The procedure becomes tricky in some special cases
 // (intersections aligned along x- or y-axis, degenerate conics, ...)
-bool solve2Quads(const double a20, const double a02, const double a11, const double a10, const double a01, const double a00,
-        const double b20, const double b02, const double b11, const double b10, const double b01, const double b00,
-        std::vector<double>& E1, std::vector<double>& E2,
+bool solve2Quads(const boost::multiprecision::float128 a20, const boost::multiprecision::float128 a02, const boost::multiprecision::float128 a11, const boost::multiprecision::float128 a10, const boost::multiprecision::float128 a01, const boost::multiprecision::float128 a00,
+        const boost::multiprecision::float128 b20, const boost::multiprecision::float128 b02, const boost::multiprecision::float128 b11, const boost::multiprecision::float128 b10, const boost::multiprecision::float128 b01, const boost::multiprecision::float128 b00,
+        std::vector<boost::multiprecision::float128>& E1, std::vector<boost::multiprecision::float128>& E2,
         bool verbose = false
         );
 
@@ -134,9 +135,9 @@ bool solve2Quads(const double a20, const double a02, const double a11, const dou
 // Which corresponds to finding the intersection points of two conics.
 // Appends the (x,y) solutions to the std::vectors E1, E2, making no attempt to check
 // whether these vectors are empty.
-bool solve2QuadsDeg(const double a11, const double a10, const double a01, const double a00,
-        const double b11, const double b10, const double b01, const double b00,
-        std::vector<double>& E1, std::vector<double>& E2,
+bool solve2QuadsDeg(const boost::multiprecision::float128 a11, const boost::multiprecision::float128 a10, const boost::multiprecision::float128 a01, const boost::multiprecision::float128 a00,
+        const boost::multiprecision::float128 b11, const boost::multiprecision::float128 b10, const boost::multiprecision::float128 b01, const boost::multiprecision::float128 b00,
+        std::vector<boost::multiprecision::float128>& E1, std::vector<boost::multiprecision::float128>& E2,
         bool verbose = false
         );
 
@@ -145,13 +146,13 @@ bool solve2QuadsDeg(const double a11, const double a10, const double a01, const 
 // b10*E1 + b01*E2 + b00 = 0
 // Appends the (x,y) solutions to the std::vectors E1, E2, making no attempt to check
 // whether these vectors are empty.
-bool solve2Linear(const double a10, const double a01, const double a00,
-        const double b10, const double b01, const double b00,
-        std::vector<double>& E1, std::vector<double>& E2,
+bool solve2Linear(const boost::multiprecision::float128 a10, const boost::multiprecision::float128 a01, const boost::multiprecision::float128 a00,
+        const boost::multiprecision::float128 b10, const boost::multiprecision::float128 b01, const boost::multiprecision::float128 b00,
+        std::vector<boost::multiprecision::float128>& E1, std::vector<boost::multiprecision::float128>& E2,
         bool verbose = false);
 
 
-double BreitWigner(const double s, const double m, const double g);
+boost::multiprecision::float128 BreitWigner(const boost::multiprecision::float128 s, const boost::multiprecision::float128 m, const boost::multiprecision::float128 g);
 
 /*!
  * Convert a LorentzVector to a vector of real number.
