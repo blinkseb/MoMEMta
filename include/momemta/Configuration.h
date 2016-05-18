@@ -52,7 +52,11 @@ class Configuration {
 
     private:
         friend class ConfigurationReader;
-        Configuration(const ConfigurationReader&);
+        friend class ConfigurationCreator;
+
+        Configuration() = default;
+
+        void freeze();
 
         std::vector<Module> modules;
         ParameterSet global_parameters;

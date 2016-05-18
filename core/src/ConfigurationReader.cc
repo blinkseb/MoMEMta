@@ -89,5 +89,13 @@ ParameterSet& ConfigurationReader::getCubaConfiguration() {
 }
 
 Configuration ConfigurationReader::freeze() const {
-    return Configuration(*this);
+    Configuration c;
+
+    c.modules = m_modules;
+    c.global_parameters = *m_global_parameters.get();
+    c.cuba_configuration = *m_cuba_configuration.get();
+
+    c.freeze();
+
+    return c;
 }

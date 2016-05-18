@@ -16,27 +16,29 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+#pragma once
+
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <momemta/Configuration.h>
-#include <momemta/ConfigurationReader.h>
 
-const std::vector<Configuration::Module>& Configuration::getModules() const {
-    return modules;
-}
+class ParameterSet;
 
-const ParameterSet& Configuration::getCubaConfiguration() const {
-    return cuba_configuration;
-}
+class ConfigurationCreator {
+    public:
+        ConfigurationCreator() = default;
 
-const ParameterSet& Configuration::getGlobalParameters() const {
-    return global_parameters;
-}
+        ConfigurationCreator& addModule(const std::string&, const std::string&, const ParameterSet&);
+        ConfigurationCreator& setCubaConfiguration(const ParameterSet&);
+        ConfigurationCreator& setGlobalParameters(const ParameterSet&);
 
-void Configuration::freeze() {
-    global_parameters.freeze();
-    cuba_configuration.freeze();
-    for (auto& module: modules) {
-        module.parameters.freeze();
-        // Attach global configuration to each module
-        module.parameters.setGlobalParameters(global_parameters);
-    }
-}
+        Configuration freeze() const;
+
+    private:
+        std::vector<Configuration::Module> m_modules;
+        ParameterSet m_cuba_configuration;
+        ParameterSet m_global_parameters;
+};

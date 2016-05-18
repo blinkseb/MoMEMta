@@ -109,14 +109,14 @@ class ParameterSet {
          * \warning Vectors are currently not supported
          */
         template<typename T>
-        void set(const std::string& name, const T& value) {
-            static_assert(
-                    std::is_same<T, int64_t>::value ||
-                    std::is_same<T, double>::value ||
-                    std::is_same<T, bool>::value ||
-                    std::is_same<T, std::string>::value,
-                    "Type not supported"
-            );
+        ParameterSet& set(const std::string& name, const T& value) {
+            //static_assert(
+                    //std::is_same<T, int64_t>::value ||
+                    //std::is_same<T, double>::value ||
+                    //std::is_same<T, bool>::value ||
+                    //std::is_same<T, std::string>::value,
+                    //"Type not supported"
+            //);
 
             if (frozen) {
                 LOG(fatal) << "You are not allowed to edit a set once frozen.";
@@ -125,11 +125,12 @@ class ParameterSet {
 
             auto it = m_set.find(name);
             if (it == m_set.end()) {
-                LOG(fatal) << "Parameter '" << name << "' not found. You can only set values that already exist.";
-                throw not_found_error("Parameter " + name + " not found");
+                it = m_set.emplace(name, Element(value, false)).first;
             }
 
             setInternal(name, it->second, value);
+
+            return *this;
         }
 
         /**

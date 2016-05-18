@@ -1,0 +1,14 @@
+add_executable(example_tt_fullyleptonic "tt_fullyleptonic.cc")
+target_link_libraries(example_tt_fullyleptonic momemta)
+set_target_properties(example_tt_fullyleptonic PROPERTIES OUTPUT_NAME
+  "tt_fullyleptonic.exe")
+
+add_executable(example_tt_fullyleptonic_NWA "tt_fullyleptonic_NWA.cc")
+target_link_libraries(example_tt_fullyleptonic_NWA momemta)
+set_target_properties(example_tt_fullyleptonic_NWA PROPERTIES OUTPUT_NAME
+  "tt_fullyleptonic_NWA.exe")
+
+add_executable(example_tt_fullyleptonic_manual_config "tt_fullyleptonic_manual_config.cc")
+target_link_libraries(example_tt_fullyleptonic_manual_config momemta)
+set_target_properties(example_tt_fullyleptonic_manual_config PROPERTIES OUTPUT_NAME
+  "tt_fullyleptonic_manual_config.exe")

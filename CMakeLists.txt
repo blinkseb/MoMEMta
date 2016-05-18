@@ -108,6 +108,7 @@ set(MOMEMTA_SOURCES
     "modules/Permutator.cc"
     "modules/UniformGenerator.cc"
     "core/src/Configuration.cc"
+    "core/src/ConfigurationCreator.cc"
     "core/src/ConfigurationReader.cc"
     "core/src/Graph.cc"
     "core/src/InputTag.cc"
@@ -166,15 +167,7 @@ add_library(empty_module SHARED "modules/EmptyModule.cc")
 option(EXAMPLES "Compile examples" ON)
 
 if(EXAMPLES)
-    add_executable(example_tt_fullyleptonic "examples/tt_fullyleptonic.cc")
-    target_link_libraries(example_tt_fullyleptonic momemta)
-    set_target_properties(example_tt_fullyleptonic PROPERTIES OUTPUT_NAME
-      "tt_fullyleptonic.exe")
-    
-    add_executable(example_tt_fullyleptonic_NWA "examples/tt_fullyleptonic_NWA.cc")
-    target_link_libraries(example_tt_fullyleptonic_NWA momemta)
-    set_target_properties(example_tt_fullyleptonic_NWA PROPERTIES OUTPUT_NAME
-      "tt_fullyleptonic_NWA.exe")
+    add_subdirectory(examples)
 endif()
 
 # Test executables
