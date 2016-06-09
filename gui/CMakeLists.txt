@@ -16,6 +16,7 @@ add_executable(momemta_gui ${momemta_gui_ui_headers}
     ui/GraphicsConnectionItem.cc
     ui/GraphicsHandleItem.cc
     ui/GraphicsModuleItem.cc
+    ui/GraphicsView.cc
     ui/MainWindow.cc
     src/main.cc
 )

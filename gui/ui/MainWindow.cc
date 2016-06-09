@@ -23,9 +23,5 @@ MainWindow::MainWindow(QMainWindow* parent): QMainWindow(parent) {
     module2->setPos(200, 0);
     scene->addItem(module2);
 
-
-    auto line = new GraphicsConnectionItem(module->handle(), module2->handle());
-    scene->addItem(line);
-
     ui->graphicsView->scale(2., 2.);
 }

@@ -15,15 +15,23 @@ class GraphicsHandleItem: public QGraphicsItem {
                 QWidget* widget) override;
         virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
-        void setConnectedLine(GraphicsConnectionItem* line);
+        virtual void hoverEnterEvent(QGraphicsSceneHoverEvent*);
+        virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent*);
 
-        const qreal radius = 10.;
+        void detachConnections();
+        void addConnection(GraphicsConnectionItem* line);
+        void removeConnection(GraphicsConnectionItem* line);
+
+        GraphicsConnectionItem* startConnection();
+
+        qreal radius() const;
 
     private:
         QRectF boundingBox;
         QBrush brush;
         QPen pen;
+        qreal radius_;
 
-        GraphicsConnectionItem* connectedLine = nullptr;
+        QList<GraphicsConnectionItem*> connections;
 };
 

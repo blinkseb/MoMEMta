@@ -29,12 +29,8 @@ void GraphicsModuleItem::paint(QPainter *painter, const QStyleOptionGraphicsItem
 QVariant GraphicsModuleItem::itemChange(GraphicsItemChange change, const QVariant &value) {
 
     if (change == ItemPositionChange && scene()) {
-        qDebug() << "Module moving";
+        // Ok
     }
 
     return QGraphicsItem::itemChange(change, value);
-}
-
-GraphicsHandleItem* GraphicsModuleItem::handle() const {
-    return static_cast<GraphicsHandleItem*>(childItems()[0]);
 }

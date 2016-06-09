@@ -14,8 +14,6 @@ class GraphicsModuleItem: public QGraphicsItem {
 
         virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
-        GraphicsHandleItem* handle() const;
-
     private:
         QRectF boundingBox;
 };
