@@ -289,6 +289,9 @@ if(PYTHON_BINDINGS)
             LIBRARY DESTINATION ${PYTHON_INSTALL_PREFIX})
 endif()
 
+# Gui
+add_subdirectory(gui)
+
 # Uninstall target
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/scripts/cmake_uninstall.cmake.in"
