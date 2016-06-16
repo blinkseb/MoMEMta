@@ -6,15 +6,18 @@
 #include <QPainter>
 #include <QtDebug>
 
-GraphicsHandleItem::GraphicsHandleItem(QGraphicsItem* parent): QGraphicsItem(parent) {
-    radius_ = 10;
-    pen = QPen(Qt::black, 1, Qt::SolidLine, Qt::FlatCap);
-    brush = QBrush(Qt::white);
+GraphicsHandleItem::GraphicsHandleItem(GraphicsHandleItem::Role role, QGraphicsItem* parent): QGraphicsItem(parent) {
+    role_ = role;
 
-    boundingBox = QRectF(0. - pen.widthF() / 2.,
-            0 - pen.widthF() / 2.,
-            radius_ + pen.widthF(),
-            radius_ + pen.widthF());
+    radius_ = 5.;
+    //pen = QPen(Qt::black, 1, Qt::SolidLine, Qt::FlatCap);
+    pen = Qt::NoPen;
+    brush = QBrush(QColor::fromRgb(143, 129, 100));
+
+    boundingBox = QRectF(-radius_ - pen.widthF() / 2.,
+            -radius_ - pen.widthF() / 2.,
+            2 * radius_ + pen.widthF(),
+            2 * radius_ + pen.widthF());
 
     setAcceptHoverEvents(true);
     setFlag(QGraphicsItem::ItemSendsScenePositionChanges);
@@ -29,7 +32,7 @@ void GraphicsHandleItem::paint(QPainter *painter, const QStyleOptionGraphicsItem
     painter->setBrush(brush);
     painter->setPen(pen);
 
-    painter->drawEllipse(0., 0., radius_, radius_);
+    painter->drawEllipse(QPointF(0, 0), radius_, radius_);
 }
 
 void GraphicsHandleItem::hoverEnterEvent(QGraphicsSceneHoverEvent* event) {
@@ -54,6 +57,10 @@ qreal GraphicsHandleItem::radius() const {
     return radius_;
 }
 
+GraphicsHandleItem::Role GraphicsHandleItem::role() const {
+    return role_;
+}
+
 void GraphicsHandleItem::addConnection(GraphicsConnectionItem* line) {
     connections.append(line);
 }
@@ -62,9 +69,13 @@ void GraphicsHandleItem::removeConnection(GraphicsConnectionItem* line) {
     connections.removeOne(line);
 }
 
-void GraphicsHandleItem::detachConnections() {
+void GraphicsHandleItem::detachConnections(GraphicsConnectionItem* except) {
     while (!connections.isEmpty()) {
         auto connection = connections.takeFirst();
+
+        if (connection == except)
+            continue;
+
         connection->detach();
         scene()->removeItem(connection);
         delete connection;

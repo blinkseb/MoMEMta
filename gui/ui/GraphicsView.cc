@@ -64,6 +64,18 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event) {
         for (const auto& child: children) {
             auto handle = dynamic_cast<GraphicsHandleItem*>(child);
             if (handle) {
+                // Do not connect an handle to itself
+                if (handle == ongoingConnection->originAnchor())
+                    continue;
+
+                // Do not connect an handle to another handle from the same module
+                if (handle->parentItem() == ongoingConnection->originAnchor()->parentItem())
+                    continue;
+
+                // Only connect an input to an output or the opposite
+                if (handle->role() == ongoingConnection->originAnchor()->role())
+                    continue;
+
                 ongoingConnection->setFinalAnchor(handle);
                 ongoingConnection = nullptr;
 

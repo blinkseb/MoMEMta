@@ -11,16 +11,26 @@ GraphicsConnectionItem::GraphicsConnectionItem(GraphicsHandleItem* from, QGraphi
     from->addConnection(this);
     temporaryFinalAnchor = from->scenePos() + QPointF(from->radius() / 2., from->radius() / 2.);
     
-    setPen(QPen(Qt::black, 2.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    setPen(QPen(QColor::fromRgb(217, 215, 172), 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 
     updatePath();
 }
 
-void GraphicsConnectionItem::setFinalAnchor(GraphicsHandleItem* to) {
-    this->to = to;
+void GraphicsConnectionItem::setFinalAnchor(GraphicsHandleItem* to_) {
+    to = to_;
 
     if (to) {
-        to->detachConnections();
+
+        // If needed, swap from & to so that from is always an OUTPUT and to an INPUT
+        if (to->role() == GraphicsHandleItem::Role::OUTPUT) {
+            std::swap(from, to);
+        }
+
+        // An INPUT can only be connected to one OUTPUT
+        to->detachConnections(this);
+        from->removeConnection(this);
+
+        from->addConnection(this);
         to->addConnection(this);
     }
 
@@ -36,10 +46,10 @@ void GraphicsConnectionItem::updatePath() {
     prepareGeometryChange();
 
     QPainterPath path;
-    path.moveTo(from->scenePos() + QPointF(from->radius() / 2., from->radius() / 2.));
+    path.moveTo(from->scenePos());
 
     if (to)
-        path.lineTo(to->scenePos() + QPointF(to->radius() / 2., to->radius() / 2.));
+        path.lineTo(to->scenePos());
     else
         path.lineTo(temporaryFinalAnchor);
 

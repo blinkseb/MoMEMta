@@ -16,12 +16,20 @@ MainWindow::MainWindow(QMainWindow* parent): QMainWindow(parent) {
     ui->graphicsView->setScene(scene);
     ui->graphicsView->setRenderHints(QPainter::Antialiasing);
 
-    auto module = new GraphicsModuleItem();
+    auto module = new GraphicsModuleItem("Module 1");
     scene->addItem(module);
 
-    auto module2 = new GraphicsModuleItem();
+    auto module2 = new GraphicsModuleItem("Module 2");
     module2->setPos(200, 0);
     scene->addItem(module2);
 
-    ui->graphicsView->scale(2., 2.);
+    ui->graphicsView->scale(1.5, 1.5);
+    
+    module->addInput();
+    module->addInput();
+    module->addOutput();
+    module->addOutput();
+
+    module2->addInput();
+    module2->addOutput();
 }

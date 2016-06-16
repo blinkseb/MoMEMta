@@ -8,7 +8,12 @@ class GraphicsConnectionItem;
 
 class GraphicsHandleItem: public QGraphicsItem {
     public:
-        GraphicsHandleItem(QGraphicsItem* parent = nullptr);
+        enum class Role {
+            INPUT,
+            OUTPUT
+        };
+
+        GraphicsHandleItem(Role role, QGraphicsItem* parent = nullptr);
 
         virtual QRectF boundingRect() const override;
         virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem *option,
@@ -18,7 +23,7 @@ class GraphicsHandleItem: public QGraphicsItem {
         virtual void hoverEnterEvent(QGraphicsSceneHoverEvent*);
         virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent*);
 
-        void detachConnections();
+        void detachConnections(GraphicsConnectionItem* except);
         void addConnection(GraphicsConnectionItem* line);
         void removeConnection(GraphicsConnectionItem* line);
 
@@ -26,11 +31,14 @@ class GraphicsHandleItem: public QGraphicsItem {
 
         qreal radius() const;
 
+        Role role() const;
+
     private:
         QRectF boundingBox;
         QBrush brush;
         QPen pen;
         qreal radius_;
+        Role role_;
 
         QList<GraphicsConnectionItem*> connections;
 };
