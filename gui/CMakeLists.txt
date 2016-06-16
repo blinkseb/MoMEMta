@@ -23,3 +23,4 @@ add_executable(momemta_gui ${momemta_gui_ui_headers}
 
 # Use the Widgets module from Qt 5.
 target_link_libraries(momemta_gui Qt5::Widgets)
+target_link_libraries(momemta_gui momemta)
