@@ -16,15 +16,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <momemta/ModuleDescriptionFiller.h>
 
-#include <momemta/ModuleFactory.h>
+ModuleDescriptionFillerBase::ModuleDescriptionFillerBase() {
 
-template<> PluginFactory<ModuleFactory::type>& PluginFactory<ModuleFactory::type>::get() {
-    static PluginFactory<ModuleFactory::type> s_instance;
-    return s_instance;
 }
 
-template<> PluginFactory<ModuleDescriptionFillerFactory::type>& PluginFactory<ModuleDescriptionFillerFactory::type>::get() {
-    static PluginFactory<ModuleDescriptionFillerFactory::type> s_instance;
-    return s_instance;
+ModuleDescriptionFillerBase::~ModuleDescriptionFillerBase() {
+
 }

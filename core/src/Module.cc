@@ -17,6 +17,7 @@
  */
 
 #include <momemta/Module.h>
+#include <momemta/Utils.h>
 
 std::string Module::statusToString(const Status& status) {
     if (status == Status::OK) {
@@ -28,4 +29,8 @@ std::string Module::statusToString(const Status& status) {
     }
 
     return "Unknown status";
+}
+
+void Module::describe(ModuleDescription& description) {
+    UNUSED(description);
 }

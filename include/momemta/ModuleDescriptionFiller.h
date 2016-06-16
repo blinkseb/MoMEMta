@@ -16,15 +16,24 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
 
-#include <momemta/ModuleFactory.h>
+class ModuleDescription;
 
-template<> PluginFactory<ModuleFactory::type>& PluginFactory<ModuleFactory::type>::get() {
-    static PluginFactory<ModuleFactory::type> s_instance;
-    return s_instance;
-}
+class ModuleDescriptionFillerBase {
+    public:
+        ModuleDescriptionFillerBase();
+        virtual ~ModuleDescriptionFillerBase();
 
-template<> PluginFactory<ModuleDescriptionFillerFactory::type>& PluginFactory<ModuleDescriptionFillerFactory::type>::get() {
-    static PluginFactory<ModuleDescriptionFillerFactory::type> s_instance;
-    return s_instance;
-}
+        virtual void fillDescription(ModuleDescription& description) = 0;
+};
+
+template <class T>
+class ModuleDescriptionFiller: public ModuleDescriptionFillerBase {
+    using ModuleDescriptionFillerBase::ModuleDescriptionFillerBase;
+
+    public:
+        virtual void fillDescription(ModuleDescription& description) override {
+            T::describe(description);
+        }
+};

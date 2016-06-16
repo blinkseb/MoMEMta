@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <momemta/ModuleDescriptionFiller.h>
 #include <momemta/PluginFactory.h>
 
 // Forward declaration
@@ -33,9 +34,12 @@ class Pool;
 
 // Register ModuleFactory used by all the modules
 using ModuleFactory = PluginFactory<Module* (std::shared_ptr<Pool>, const ParameterSet&)>;
+// Special factory creating ModuleDescriptionFiller
+using ModuleDescriptionFillerFactory = PluginFactory<ModuleDescriptionFillerBase* (void)>;
 
 #define REGISTER_MODULE(type) \
-    static const ModuleFactory::PMaker<type> PLUGIN_UNIQUE_NAME(s_module , __LINE__)(#type)
+    static const ModuleFactory::PMaker<type> PLUGIN_UNIQUE_NAME(s_module , __LINE__)(#type); \
+    static const ModuleDescriptionFillerFactory::PMaker<ModuleDescriptionFiller<type>> PLUGIN_UNIQUE_NAME(s_filler , __LINE__)(#type)
 
 #define REGISTER_MODULE_NAME(name, type) \
     static const ModuleFactory::PMaker<type> PLUGIN_UNIQUE_NAME(s_module , __LINE__)(name)

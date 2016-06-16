@@ -173,6 +173,7 @@ set(MOMEMTA_SOURCES
     "core/src/MatrixElementFactory.cc"
     "core/src/MoMEMta.cc"
     "core/src/Module.cc"
+    "core/src/ModuleDescriptionFiller.cc"
     "core/src/ModuleFactory.cc"
     "core/src/ParameterSet.cc"
     "core/src/Path.cc"

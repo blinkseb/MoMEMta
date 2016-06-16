@@ -21,6 +21,7 @@
 
 #include <momemta/impl/Pool.h>
 #include <momemta/InputTag.h>
+#include <momemta/ModuleDescription.h>
 #include <momemta/ModuleFactory.h>
 
 /*! \defgroup modules Modules
@@ -123,6 +124,10 @@ class Module {
         virtual std::string name() const final {
             return m_name;
         }
+
+        /** \brief Describe the module's inputs and outputs
+         */
+        static void describe(ModuleDescription& description);
 
         /**
          * \brief Test if a given name correspond to a virtual module
