@@ -18,8 +18,8 @@ class GraphicsModuleItem: public QGraphicsItem {
 
         virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
-        void addInput();
-        void addOutput();
+        void addInput(const QString& name);
+        void addOutput(const  QString& name);
 
     private:
         QRectF boundingBox;

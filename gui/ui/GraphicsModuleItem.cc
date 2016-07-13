@@ -3,6 +3,7 @@
 #include <GraphicsHandleItem.h>
 
 #include <QColor>
+#include <QGraphicsScene>
 #include <QPainter>
 
 #include <QtDebug>
@@ -54,15 +55,35 @@ void GraphicsModuleItem::paint(QPainter *painter, const QStyleOptionGraphicsItem
 
 QVariant GraphicsModuleItem::itemChange(GraphicsItemChange change, const QVariant &value) {
 
+    qreal padding = 10;
     if (change == ItemPositionChange && scene()) {
-        // Ok
+        QPointF newPos = value.toPointF();
+
+        auto newBoundingRect = boundingRect();
+        newBoundingRect.moveTopLeft(newPos);
+        newBoundingRect.adjust(-padding, -padding, padding, padding);
+
+        auto items = scene()->items(newBoundingRect);
+        bool overlap = false;
+        for (const auto& item: items) {
+            if (item == this)
+                continue;
+
+            if (dynamic_cast<GraphicsModuleItem*>(item)) {
+                overlap = true;
+                break;
+            }
+        }
+
+        if (overlap)
+            return pos();
     }
 
     return QGraphicsItem::itemChange(change, value);
 }
 
-void GraphicsModuleItem::addInput() {
-    inputHandles.append(new GraphicsHandleItem(GraphicsHandleItem::Role::INPUT, this));
+void GraphicsModuleItem::addInput(const QString& name) {
+    inputHandles.append(new GraphicsHandleItem(GraphicsHandleItem::Role::INPUT, name, this));
 
     // Re-place handles
     prepareGeometryChange();
@@ -77,8 +98,8 @@ void GraphicsModuleItem::addInput() {
     }
 }
 
-void GraphicsModuleItem::addOutput() {
-    outputHandles.append(new GraphicsHandleItem(GraphicsHandleItem::Role::OUTPUT, this));
+void GraphicsModuleItem::addOutput(const QString& name) {
+    outputHandles.append(new GraphicsHandleItem(GraphicsHandleItem::Role::OUTPUT, name, this));
 
     // Re-place handles
     prepareGeometryChange();

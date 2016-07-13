@@ -25,6 +25,11 @@ void GraphicsView::mousePressEvent(QMouseEvent *event) {
 }
 
 void GraphicsView::mouseMoveEvent(QMouseEvent *event) {
+
+    if (event->buttons() & Qt::MiddleButton) {
+        // Drag
+    }
+
     if (ongoingConnection) {
         ongoingConnection->setTemporaryFinalAnchor(mapToScene(event->pos()));
     }
@@ -92,4 +97,19 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event) {
     }
 
     QGraphicsView::mouseReleaseEvent(event);
+}
+
+void GraphicsView::wheelEvent(QWheelEvent *e) {
+    if (e->modifiers() & Qt::ControlModifier) {
+        qreal scale = 1.;
+        if (e->delta() > 0)
+            scale += 0.2;
+        else
+            scale -= 0.2;
+
+        QGraphicsView::scale(scale, scale);
+        e->accept();
+    } else {
+        QGraphicsView::wheelEvent(e);
+    }
 }

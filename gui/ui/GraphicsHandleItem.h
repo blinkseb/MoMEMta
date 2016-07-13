@@ -13,7 +13,7 @@ class GraphicsHandleItem: public QGraphicsItem {
             OUTPUT
         };
 
-        GraphicsHandleItem(Role role, QGraphicsItem* parent = nullptr);
+        GraphicsHandleItem(Role role, const QString& name, QGraphicsItem* parent = nullptr);
 
         virtual QRectF boundingRect() const override;
         virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem *option,
@@ -39,6 +39,7 @@ class GraphicsHandleItem: public QGraphicsItem {
         QPen pen;
         qreal radius_;
         Role role_;
+        QString name_;
 
         QList<GraphicsConnectionItem*> connections;
 };

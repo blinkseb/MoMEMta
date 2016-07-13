@@ -6,8 +6,10 @@
 #include <QPainter>
 #include <QtDebug>
 
-GraphicsHandleItem::GraphicsHandleItem(GraphicsHandleItem::Role role, QGraphicsItem* parent): QGraphicsItem(parent) {
+GraphicsHandleItem::GraphicsHandleItem(GraphicsHandleItem::Role role, const QString& name, QGraphicsItem* parent): QGraphicsItem(parent) {
     role_ = role;
+    name_ = name;
+    setToolTip(name_);
 
     radius_ = 5.;
     //pen = QPen(Qt::black, 1, Qt::SolidLine, Qt::FlatCap);

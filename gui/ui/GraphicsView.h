@@ -11,6 +11,7 @@ class GraphicsView: public QGraphicsView {
         void mousePressEvent(QMouseEvent *event) override;
         void mouseReleaseEvent(QMouseEvent *event) override;
         void mouseMoveEvent(QMouseEvent *event) override;
+        void wheelEvent(QWheelEvent *e) override;
 
     private:
         GraphicsConnectionItem* ongoingConnection = nullptr;
