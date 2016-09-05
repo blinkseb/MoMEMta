@@ -218,48 +218,52 @@ class MatrixElement: public Module {
                 pdf_scale_squared = SQ(pdf_scale);
             }
 
+            // Prepare arrays for sorting particles
+            for (size_t i = 0; i < m_invisibles_ids.size(); i++) {
+                indexing.push_back(m_invisibles_ids[i].me_index - 1);
+            }
+
+            for (size_t i = 0; i < m_particles_ids.size(); i++) {
+                indexing.push_back(m_particles_ids[i].me_index - 1);
+            }
+
+            // Pre-allocate memory for the finalState array
+            finalState.resize(m_invisibles_ids.size() + m_particles_ids.size());
+
+            // Sort the array taking into account the indexing in the configuration
+            std::vector<int64_t> suite(indexing.size());
+            std::iota(suite.begin(), suite.end(), 0);
+
+            permutations = get_permutations(suite, indexing);
+
         };
 
         virtual Status work() override {
             static std::vector<LorentzVector> empty_vector;
 
             *m_integrand = 0;
+            const std::vector<LorentzVector>& partons = *m_partons;
 
             std::vector<LorentzVector> particles(m_particles.size());
             for (size_t index = 0; index < m_particles.size(); index++) {
                 particles[index] = *m_particles[index];
             }
 
-            internal_work(*m_partons, m_solution->values, m_solution->jacobian, particles);
-
-            return Status::OK;
-        }
-
-        virtual void internal_work(const std::vector<LorentzVector>& partons, const std::vector<LorentzVector>& invisibles, double invisibles_jacobian, const std::vector<LorentzVector> particles) {
-            std::vector<std::pair<int, std::vector<double>>> finalStates;
-            std::vector<int64_t> indexing;
-
             for (size_t i = 0; i < m_invisibles_ids.size(); i++) {
-                finalStates.push_back(std::make_pair(m_invisibles_ids[i].pdg_id, toVector(invisibles[i])));
-                indexing.push_back(m_invisibles_ids[i].me_index - 1);
+                finalState[i] = std::make_pair(m_invisibles_ids[i].pdg_id, toVector(m_solution->values[i]));
             }
 
             for (size_t i = 0; i < m_particles_ids.size(); i++) {
-                finalStates.push_back(std::make_pair(m_particles_ids[i].pdg_id, toVector(particles[i])));
-                indexing.push_back(m_particles_ids[i].me_index - 1);
+                finalState[m_invisibles_ids.size() + i] = std::make_pair(m_particles_ids[i].pdg_id, toVector(particles[i]));
             }
 
             // Sort the array taking into account the indexing in the configuration
-            std::vector<int64_t> suite(indexing.size());
-            for (size_t i = 0; i < indexing.size(); i++)
-                suite[i] = i;
+            apply_permutations(finalState, permutations);
 
-            auto permutations = get_permutations(suite, indexing);
-            apply_permutations(finalStates, permutations);
+            std::pair<std::vector<double>, std::vector<double>> initialState { toVector(partons[0]),
+                                                                               toVector(partons[1]) };
 
-            std::pair<std::vector<double>, std::vector<double>> initialState { toVector(partons[0]), toVector(partons[1]) };
-
-            auto result = m_ME->compute(initialState, finalStates);
+            auto result = m_ME->compute(initialState, finalState);
 
             double x1 = std::abs(partons[0].Pz() / (sqrt_s / 2.));
             double x2 = std::abs(partons[1].Pz() / (sqrt_s / 2.));
@@ -274,7 +278,7 @@ class MatrixElement: public Module {
                 phaseSpaceOut *= SQ(p.P()) * sin(p.Theta()) / (2.0 * p.E() * CB(2. * M_PI));
             }
 
-            double integrand = phaseSpaceIn * phaseSpaceOut * invisibles_jacobian;
+            double integrand = phaseSpaceIn * phaseSpaceOut * m_solution->jacobian;
             for (const auto& jacobian: m_jacobians) {
                 integrand *= (*jacobian);
             }
@@ -290,6 +294,8 @@ class MatrixElement: public Module {
 
             final_integrand *= integrand;
             *m_integrand = final_integrand;
+
+            return Status::OK;
         }
 
     private:
@@ -298,6 +304,10 @@ class MatrixElement: public Module {
         double pdf_scale_squared = 0;
         std::shared_ptr<momemta::MatrixElement> m_ME;
         std::shared_ptr<LHAPDF::PDF> m_pdf;
+
+        std::vector<int64_t> indexing;
+        std::vector<size_t> permutations;
+        std::vector<std::pair<int, std::vector<double>>> finalState;
 
         // Inputs
         Value<std::vector<LorentzVector>> m_partons;
