@@ -48,7 +48,8 @@ void GraphicsModuleItem::paint(QPainter *painter, const QStyleOptionGraphicsItem
     //painter->setPen(QPen(Qt::white, 0.5, Qt::DashLine));
     //painter->drawLine(0, topPadding_, width_, topPadding_);
     //painter->drawLine(0, height_ - labelHeight_ - bottomPadding_, width_, height_ - labelHeight_ - bottomPadding_);
-    
+
+    // FIXME: Move to CSS
     painter->setPen(QPen(QColor::fromRgb(217, 215, 172)));
     painter->drawText(nameBoundingBox, Qt::AlignCenter, name_);
 }
@@ -56,7 +57,9 @@ void GraphicsModuleItem::paint(QPainter *painter, const QStyleOptionGraphicsItem
 QVariant GraphicsModuleItem::itemChange(GraphicsItemChange change, const QVariant &value) {
 
     qreal padding = 10;
-    if (change == ItemPositionChange && scene()) {
+    // FIXME: Prevent module overlap
+
+    /*if (change == ItemPositionChange && scene()) {
         QPointF newPos = value.toPointF();
 
         auto newBoundingRect = boundingRect();
@@ -77,7 +80,7 @@ QVariant GraphicsModuleItem::itemChange(GraphicsItemChange change, const QVarian
 
         if (overlap)
             return pos();
-    }
+    }*/
 
     return QGraphicsItem::itemChange(change, value);
 }

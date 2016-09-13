@@ -17,7 +17,7 @@
  */
 
 #include <momemta/Module.h>
-#include <momemta/Utils.h>
+#include <momemta/Unused.h>
 
 std::string Module::statusToString(const Status& status) {
     if (status == Status::OK) {
