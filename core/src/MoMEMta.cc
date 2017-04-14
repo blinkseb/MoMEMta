@@ -30,6 +30,8 @@
 #include <momemta/Unused.h>
 
 #include <Graph.h>
+#include <ModuleUtils.h>
+#include <lua/utils.h>
 
 #ifdef DEBUG_TIMING
 using namespace std::chrono;
@@ -61,12 +63,32 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     m_pool->current_module("met");
     m_met = m_pool->put<LorentzVector>({"met", "p4"});
 
-    // Construct modules from configuration
-    std::vector<Configuration::Module> light_modules = configuration.getModules();
+    // List of all available type of modules with their definition
+    momemta::ModuleList available_modules;
+    momemta::ModuleRegistry::get().exportList(true, available_modules);
+
+    // List of module instances defined by the user, with their parameters
+    std::vector<Configuration::Module> module_instances_def = configuration.getModules();
+
+    // First, validate the parameters of each module instance, ensure they fulfill the module definition
+    bool all_parameters_valid = true;
+    for (const auto& instance_def: module_instances_def)
+        all_parameters_valid &= momemta::validateModuleParameters(*instance_def.parameters, available_modules);
+
+    if (! all_parameters_valid) {
+        // At least one set of parameters is invalid. Stop here
+        auto exception = lua::invalid_configuration_file("Validation of modules' parameters failed. Check the log output for more details on how to fix your configuration file.");
+        LOG(fatal) << exception.what();
+
+        throw exception;
+    }
+
+    auto& light_modules = module_instances_def;
     for (const auto& module: light_modules) {
         m_pool->current_module(module);
         try {
-            m_modules.push_back(ModuleFactory::get().create(module.type, m_pool, *module.parameters));
+            //m_modules.push_back(ModuleFactory::get().create(module.type, m_pool, *module.parameters));
+            m_modules.push_back(momemta::ModuleRegistry::get().find(module.type).maker->create(m_pool, *module.parameters));
         } catch (...) {
             LOG(fatal) << "Exception while trying to create module " << module.type << "::" << module.name
                        << ". See message above for a (possible) more detailed description of the error.";

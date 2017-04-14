@@ -25,16 +25,16 @@
 
 /*! \brief \f$\require{cancel}\f$ Final (main) Block F, describing \f$q_1 q_2 \to X + s_{13} (\to \cancel{p_1} p_3) + s_{24} (\to \cancel{p_2} p_4)\f$
  *
- * Final (main) Block F on \f$q_1 q_2 \to X + s_{13} + s_{24} \to X + p_1 p_2 p_3 p_4\f$,  
+ * Final (main) Block F on \f$q_1 q_2 \to X + s_{13} + s_{24} \to X + p_1 p_2 p_3 p_4\f$,
  * where \f$q_1\f$ and \f$q_2\f$ are Bjorken fractions, \f$s_{13}\f$ and \f$s_{24}\f$ are particles
  * decaying respectively into \f$p_1\f$ (invisible particle) and \f$p_3\f$ (visible particle),
  * and \f$p_2\f$ (invisible particle) and \f$p_4\f$ (visible particle).
- * 
+ *
  * This Block addresses the change of variables needed to pass from the standard phase-space
  * parametrization to the \f$\frac{1}{16\pi^2 E_1 E_2} dq_{1} dq_{2} ds_{13} d_s{24}  \times J\f$ parametrization.
- * 
+ *
  * The integration is performed over \f$q_{1}\f$, \f$q_{2}\f$, \f$s_{13}\f$ and \f$s_{24}\f$
- * with \f$p_3\f$ and \f$p_4\f$ as inputs. Per integration point, 
+ * with \f$p_3\f$ and \f$p_4\f$ as inputs. Per integration point,
  * the LorentzVectors of the invisible particle, \f$p_1\f$ and \f$p_2\f$,
  * are computed  based on this set of equations:
  *
@@ -49,7 +49,7 @@
  * - \f$p_2^2 = m_2^2\f$
  *
  * The observed MET is not used in this block since to reconstruct the
- * neutrinos the system requires as input the total 4-momentum of the 
+ * neutrinos the system requires as input the total 4-momentum of the
  * visible objects (energy and longitudinal momentum included).
  *
  * Up to 2 (\f$p_1\f$, \f$p_2\f$) solutions are possible.
@@ -107,7 +107,7 @@ class BlockF: public Module {
 
             s13 = get<double>(parameters.get<InputTag>("s13"));
             s24 = get<double>(parameters.get<InputTag>("s24"));
-	    
+
             p3 = get<LorentzVector>(parameters.get<InputTag>("p3"));
             p4 = get<LorentzVector>(parameters.get<InputTag>("p4"));
 
@@ -274,4 +274,14 @@ class BlockF: public Module {
         // Outputs
         std::shared_ptr<SolutionCollection> solutions = produce<SolutionCollection>("solutions");
 };
-REGISTER_MODULE(BlockF);
+
+REGISTER_MODULE(BlockF)
+        .Input("q1")
+        .Input("q2")
+        .Input("s13")
+        .Input("s24")
+        .Input("p3")
+        .Input("p4")
+        .OptionalInput("branches")
+        .Output("solutions")
+        .GlobalAttr("energy:double");

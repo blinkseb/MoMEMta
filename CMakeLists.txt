@@ -193,6 +193,7 @@ set(MOMEMTA_SOURCES
     "core/src/MoMEMta.cc"
     "core/src/Module.cc"
     "core/src/ModuleFactory.cc"
+    "core/src/ModuleUtils.cc"
     "core/src/MEParameters.cc"
     "core/src/ParameterSet.cc"
     "core/src/Particle.cc"
@@ -202,6 +203,7 @@ set(MOMEMTA_SOURCES
     "core/src/SLHAReader.cc"
     "core/src/Solution.cc"
     "core/src/Utils.cc"
+    "core/src/lib/optional.cc"
     "core/src/logger/formatter.cc"
     "core/src/logger/logger.cc"
     "core/src/logger/sink.cc"
@@ -210,6 +212,11 @@ set(MOMEMTA_SOURCES
     "core/src/lua/Path.cc"
     "core/src/lua/Types.cc"
     "core/src/lua/utils.cc"
+    "core/src/registry/ModuleDefBuilder.cc"
+    "core/src/registry/ModuleDefUtils.cc"
+    "core/src/registry/ModuleRegistry.cc"
+    "core/src/strings/Scanner.cc"
+    "core/src/strings/StringPiece.cc"
     )
 
 # Embed lua scripts into the C++ code

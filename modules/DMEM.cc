@@ -52,7 +52,7 @@ class DMEM: public Module {
         }
 
         virtual Status work() override {
-            
+
             LorentzVector tot;
             for (const auto& v: m_particles)
                 tot += *v;
@@ -80,4 +80,12 @@ class DMEM: public Module {
         // Outputs
         std::shared_ptr<TH1D> m_hist;
 };
-REGISTER_MODULE(DMEM);
+
+REGISTER_MODULE(DMEM)
+        .Input("particles")
+        .Input("ps_weight")
+        .Input("me_output")
+        .Output("hist")
+        .Attr("x_start:double")
+        .Attr("x_end:double")
+        .Attr("n_bins:int");

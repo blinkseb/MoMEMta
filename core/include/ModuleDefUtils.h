@@ -1,6 +1,6 @@
 /*
  *  MoMEMta: a modular implementation of the Matrix Element Method
- *  Copyright (C) 2016  Universite catholique de Louvain (UCL), Belgium
+ *  Copyright (C) 2017  Universite catholique de Louvain (UCL), Belgium
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,23 +16,23 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
 
-#include <momemta/ParameterSet.h>
-#include <momemta/Module.h>
+#include <string>
+
+#include <momemta/ModuleDef.h>
+
+#include <lib/optional.h>
+
+namespace momemta {
 
 /**
- * \internal
+ * Check if an input or an attribute \p name exists in the definition \p def
+ * \param name The name to look for
+ * \param def The definition of the module
+ * \return True if such input or attribute exist, false otherwise
  */
-class EmptyModule: public Module {
-    public:
+bool inputOrAttrExists(const std::string& name, const ModuleDef& def);
 
-        EmptyModule(PoolPtr pool, const ParameterSet& parameters): Module(pool, parameters.getModuleName()) {
-            // Empty
-        };
-
-        virtual Status work() override {
-            return Status::OK;
-        }
-};
-
-REGISTER_MODULE(EmptyModule);
+gtl::optional<AttrDef> findAttr(const std::string& name, const ModuleDef& def);
+}

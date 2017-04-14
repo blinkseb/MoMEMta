@@ -40,6 +40,7 @@
 #include <lua/Path.h>
 #include <lua/Types.h>
 #include <lua/utils.h>
+#include <momemta/ModuleRegistry.h>
 
 void execute_string(std::shared_ptr<lua_State> L, const std::string& code) {
     if (luaL_dostring(L.get(), code.c_str())) {
@@ -135,11 +136,16 @@ TEST_CASE("lua parsing utilities", "[lua]") {
     }
 
     SECTION("loading modules") {
-        auto plugins = ModuleFactory::get().getPluginsList().size();
+        momemta::ModuleList modules;
+        momemta::ModuleRegistry::get().exportList(true, modules);
+
+        auto n_modules = modules.size();
 
         execute_string(L, "load_modules('libempty_module.so')");
 
-        REQUIRE(ModuleFactory::get().getPluginsList().size() == plugins + 1);
+        momemta::ModuleRegistry::get().exportList(true, modules);
+
+        REQUIRE(modules.size() == n_modules + 1);
     }
 
     SECTION("parsing values") {

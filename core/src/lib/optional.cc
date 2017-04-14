@@ -1,6 +1,6 @@
 /*
  *  MoMEMta: a modular implementation of the Matrix Element Method
- *  Copyright (C) 2016  Universite catholique de Louvain (UCL), Belgium
+ *  Copyright (C) 2017  Universite catholique de Louvain (UCL), Belgium
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,23 +16,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <lib/optional.h>
 
-#include <momemta/ParameterSet.h>
-#include <momemta/Module.h>
+namespace momemta {
+namespace gtl {
 
-/**
- * \internal
- */
-class EmptyModule: public Module {
-    public:
+const char *bad_optional_access::what() const noexcept {
+    return "bad_optional_access";
+}
 
-        EmptyModule(PoolPtr pool, const ParameterSet& parameters): Module(pool, parameters.getModuleName()) {
-            // Empty
-        };
-
-        virtual Status work() override {
-            return Status::OK;
-        }
-};
-
-REGISTER_MODULE(EmptyModule);
+}
+}

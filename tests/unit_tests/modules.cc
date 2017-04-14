@@ -99,7 +99,7 @@ TEST_CASE("Modules", "[modules]") {
 
         pool->current_module(module);
 
-        auto result = ModuleFactory::get().create(type, pool, *parameters);
+        auto result = momemta::ModuleRegistry::get().find(type).maker->create(pool, *parameters);
         REQUIRE(result.get());
 
         return result;
@@ -308,7 +308,7 @@ TEST_CASE("Modules", "[modules]") {
 
         parameters->set("energy", sqrt_s);
         parameters->set("pT_is_met", pT_is_met);
-        
+
         parameters->set("s13", InputTag("mockS", "s13"));
         parameters->set("s134", InputTag("mockS", "s134"));
         parameters->set("s25", InputTag("mockS", "s25"));
@@ -322,7 +322,7 @@ TEST_CASE("Modules", "[modules]") {
         auto s25 = pool->put<double>({"mockS", "s25"});
         auto s256 = pool->put<double>({"mockS", "s256"});
 
-        *s13 = s_13_25; 
+        *s13 = s_13_25;
         *s134 = s_134_256;
         *s25 = s_13_25;
         *s256 = s_134_256;
@@ -346,7 +346,7 @@ TEST_CASE("Modules", "[modules]") {
             LorentzVector test_p134 = input_particles->at(1) + test_p13;
             LorentzVector test_p25 = input_particles->at(2) + solution.values.at(1);
             LorentzVector test_p256 = input_particles->at(3) + test_p25;
-            
+
             REQUIRE(test_p13.M2() == Approx(s_13_25));
             REQUIRE(test_p134.M2() == Approx(s_134_256));
             REQUIRE(test_p25.M2() == Approx(s_13_25));
