@@ -204,4 +204,9 @@ class Looper: public Module {
 #endif
 
 };
-REGISTER_MODULE(Looper);
+
+REGISTER_MODULE(Looper)
+    .Input("solutions")
+    .Output("particles")
+    .Output("jacobian")
+    .Attr("path:path");

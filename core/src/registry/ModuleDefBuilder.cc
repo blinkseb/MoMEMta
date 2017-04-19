@@ -26,6 +26,8 @@ namespace registration {
 
 namespace {
 
+// FIXME: Do proper error handling
+
 /**
  * Finalize an input or output definition given a \p spec
  *

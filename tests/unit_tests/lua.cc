@@ -93,7 +93,8 @@ class LazyTableMock: public lua::LazyTable {
 TEST_CASE("lua parsing utilities", "[lua]") {
 
     // Suppress log messages
-    logging::set_level(logging::level::fatal);
+    auto default_log_level = logging::level::warning;
+    logging::set_level(default_log_level);
 
     LuaCallbackMock luaCallback;
     REQUIRE(luaCallback.modules.empty());
@@ -102,7 +103,11 @@ TEST_CASE("lua parsing utilities", "[lua]") {
     auto stack_size = lua_gettop(L.get());
 
     SECTION("custom functions") {
+
+        logging::set_level(logging::level::fatal);
         execute_string(L, "load_modules('not_existing.so')");
+        logging::set_level(default_log_level);
+
         execute_string(L, "parameter('not_existing')");
 
         // Check that the 'add_dimension()' function returns the correct InputTag

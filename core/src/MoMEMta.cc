@@ -441,7 +441,7 @@ int MoMEMta::integrand(const double* psPoints, double* results, const double* we
 #endif
 
         if (status == Module::Status::NEXT) {
-            // Stop executation for the current integration step
+            // Stop execution for the current integration step
             // Returns 0 so that cuba knows this phase-space volume is not relevant
             for (size_t i = 0; i < m_n_components; i++)
                 results[i] = 0;

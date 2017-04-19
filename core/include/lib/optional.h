@@ -17,6 +17,8 @@ limitations under the License.
 
 #pragma once
 
+#include <platform/macros.h>
+
 #include <assert.h>
 #include <functional>
 #include <initializer_list>
@@ -196,7 +198,7 @@ class optional_data : public optional_data_dtor_base<T> {
 
   optional_data() = default;
 
-  optional_data(const optional_data& rhs) {
+  optional_data(const optional_data& rhs): base() {
     if (rhs.engaged_) {
       construct(rhs.data_);
     }
@@ -778,7 +780,7 @@ constexpr bool operator!=(nullopt_t, const optional<T>& x) noexcept {
   return static_cast<bool>(x);
 }
 template <class T>
-constexpr bool operator<(const optional<T>& x, nullopt_t) noexcept {
+constexpr bool operator<(const optional<T>& x ATTRIBUTE_UNUSED, nullopt_t) noexcept {
   return false;
 }
 template <class T>
@@ -790,7 +792,7 @@ constexpr bool operator<=(const optional<T>& x, nullopt_t) noexcept {
   return !x;
 }
 template <class T>
-constexpr bool operator<=(nullopt_t, const optional<T>& x) noexcept {
+constexpr bool operator<=(nullopt_t, const optional<T>& x ATTRIBUTE_UNUSED) noexcept {
   return true;
 }
 template <class T>
@@ -798,11 +800,11 @@ constexpr bool operator>(const optional<T>& x, nullopt_t) noexcept {
   return static_cast<bool>(x);
 }
 template <class T>
-constexpr bool operator>(nullopt_t, const optional<T>& x) noexcept {
+constexpr bool operator>(nullopt_t, const optional<T>& x ATTRIBUTE_UNUSED) noexcept {
   return false;
 }
 template <class T>
-constexpr bool operator>=(const optional<T>& x, nullopt_t) noexcept {
+constexpr bool operator>=(const optional<T>& x ATTRIBUTE_UNUSED, nullopt_t) noexcept {
   return true;
 }
 template <class T>

@@ -53,6 +53,7 @@ struct ModuleRegistrationData {
     ModuleDef module_def;
 
     /// \private
+    // FIXME: Move to ModuleFactory?
     std::shared_ptr<ModuleMakerBase> maker;
 };
 
@@ -77,7 +78,7 @@ public:
      where `<name>` matches regexp `[a-zA-Z][a-zA-Z0-9_]*`
 
      `<type>` can be:
-       - `string`, `int`, `double`, `bool`, `pset`
+       - `string`, `int`, `double`, `bool`, `pset`, `path`
        - `list(string)`, `list(double)`, ...(meaning lists of the above types)
 
      `<default>`, if included, is the default value of the attribute.

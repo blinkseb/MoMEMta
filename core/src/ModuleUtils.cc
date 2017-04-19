@@ -41,17 +41,7 @@ bool momemta::validateModuleParameters(const ParameterSet& parameters, const Mod
     std::vector<std::string> errors;
     std::vector<std::string> warnings;
 
-    // Check that all inputs are defined
-    for (const auto& input_def: module_def.inputs) {
-        // Ignore optional inputs
-        if (input_def.optional)
-            continue;
-
-        if (! parameters.exists(input_def.name))
-            errors.emplace_back("Input not found: " + input_def.name);
-    }
-
-    // And attributes
+    // Check that all attributes are defined
     // TODO: We can imagine here validating also the type of the attribute
     // TODO: Add support for optional attributes
     for (const auto& attr_def: module_def.attributes) {
@@ -62,6 +52,32 @@ bool momemta::validateModuleParameters(const ParameterSet& parameters, const Mod
 
         if (! parameters.exists(attr_def.name))
             errors.emplace_back("Attribute not found: " + attr_def.name);
+    }
+
+    // Check that all inputs are defined
+    for (const auto& input_def: module_def.inputs) {
+        // Ignore optional inputs
+        if (input_def.optional)
+            continue;
+
+        const ParameterSet* pset = &parameters;
+        std::vector<AttrDef> nested_attributes = input_def.nested_attributes;
+        while (!nested_attributes.empty()) {
+            AttrDef nested_attribute = nested_attributes.front();
+            nested_attributes.erase(nested_attributes.begin());
+
+            if (pset->existsAs<ParameterSet>(nested_attribute.name))
+                pset = &pset->get<ParameterSet>(nested_attribute.name);
+            else {
+                // FIXME: Handle error
+                LOG(error) << "Attribute " << nested_attribute.name << " not found in PSet " << pset->getModuleType() << "::" << pset->getModuleName();
+                pset = nullptr;
+                break;
+            }
+        }
+
+        if (!pset || !pset->exists(input_def.name))
+            errors.emplace_back("Input not found: " + input_def.name);
     }
 
     // Check for parameters not found in the module definition

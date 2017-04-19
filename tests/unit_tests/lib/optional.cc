@@ -24,6 +24,8 @@ limitations under the License.
 
 #include <momemta/Logging.h>
 
+#include <platform/macros.h>
+
 namespace momemta {
 namespace {
 
@@ -85,7 +87,7 @@ struct ConstexprType {
 #ifndef SKIP_CONSTEXPR_TEST_DUE_TO_CLANG_BUG
   constexpr ConstexprType(std::initializer_list<int> il) : x(il.size()) {}
 #endif
-  constexpr ConstexprType(const char* s) : x(-1) {}  // NOLINT
+  constexpr ConstexprType(const char* s ATTRIBUTE_UNUSED) : x(-1) {}  // NOLINT
   int x;
 };
 
