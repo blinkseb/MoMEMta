@@ -204,7 +204,7 @@ class BlockB: public Module {
 REGISTER_MODULE(BlockB)
         .Input("s12")
         .Input("p2")
-        .OptionalInput("branches")
+        .OptionalInputs("branches")
         .Input("met=met::p4")
         .Output("solutions")
         .GlobalAttr("energy:double")

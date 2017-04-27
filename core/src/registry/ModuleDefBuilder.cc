@@ -43,7 +43,11 @@ void finalizeInputOrOutput(StringPiece spec, bool is_output, ModuleRegistrationD
     ArgDef def;
     StringPiece out;
 
+    // An optional input starts with a '?'
+
     def.optional = spec.Consume("?");
+
+    def.many = spec.Consume("*");
 
     if (! is_output) {
         std::vector<std::string> nested_attributes;
@@ -82,9 +86,6 @@ void finalizeInputOrOutput(StringPiece spec, bool is_output, ModuleRegistrationD
             .GetResult(&spec, &out);
 
     def.name = out.ToString();
-
-    // FIXME: Add support for inputs inside a pset attribute
-    // FIXME: Proposed syntax: "attribute/input"
 
     if (!is_output) {
         // Parse default value
@@ -189,6 +190,18 @@ ModuleDefBuilder& ModuleDefBuilder::Input(const std::string& spec) {
 ModuleDefBuilder& ModuleDefBuilder::OptionalInput(const std::string& spec) {
     // Prefix spec with '?' to indicate an optional input
     inputs.emplace_back("?" + spec);
+    return *this;
+}
+
+ModuleDefBuilder& ModuleDefBuilder::Inputs(const std::string& spec) {
+    // Prefix spec with '*' to indicate a list of inputs
+    inputs.emplace_back("*" + spec);
+    return *this;
+}
+
+ModuleDefBuilder& ModuleDefBuilder::OptionalInputs(const std::string& spec) {
+    // Prefix spec with '?*' to indicate optional inputs
+    inputs.emplace_back("?*" + spec);
     return *this;
 }
 

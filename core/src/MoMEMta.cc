@@ -30,6 +30,7 @@
 #include <momemta/Unused.h>
 
 #include <Graph.h>
+#include <Graph2.h>
 #include <ModuleUtils.h>
 #include <lua/utils.h>
 
@@ -42,30 +43,9 @@ using namespace std::chrono;
 
 MoMEMta::MoMEMta(const Configuration& configuration) {
 
-    // Initialize shared memory pool for modules
-    m_pool.reset(new Pool());
-
-    // Create phase-space points vector, input for many modules
-    m_pool->current_module("cuba");
-    m_ps_points = m_pool->put<std::vector<double>>({"cuba", "ps_points"});
-    m_ps_weight = m_pool->put<double>({"cuba", "ps_weight"});
-
-    // For each input declared in the configuration, create pool entries for p4 and type
-    auto inputs = configuration.getInputs();
-    for (const auto& input: inputs) {
-        LOG(debug) << "Input declared: " << input;
-        m_pool->current_module(input);
-        m_inputs_p4.emplace(input, m_pool->put<LorentzVector>({input, "p4"}));
-        m_inputs_type.emplace(input, m_pool->put<int64_t>({input, "type"}));
-    }
-
-    // Create input for met
-    m_pool->current_module("met");
-    m_met = m_pool->put<LorentzVector>({"met", "p4"});
-
     // List of all available type of modules with their definition
     momemta::ModuleList available_modules;
-    momemta::ModuleRegistry::get().exportList(true, available_modules);
+    momemta::ModuleRegistry::get().exportList(false, available_modules);
 
     // List of module instances defined by the user, with their parameters
     std::vector<Configuration::Module> module_instances_def = configuration.getModules();
@@ -83,7 +63,81 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
         throw exception;
     }
 
-    auto& light_modules = module_instances_def;
+    // Insert internal modules (cuba, MoMEMta, inputs, ...) into the requested list.
+    auto insert_internal_module = [&module_instances_def](const std::string& type, const std::string& name,
+                                                          const ParameterSet& parameters) {
+        Configuration::Module internal_module;
+        internal_module.type = type;
+        internal_module.name = name;
+        internal_module.parameters = std::make_shared<ParameterSet>(parameters);
+
+        module_instances_def.push_back(internal_module);
+    };
+
+    insert_internal_module("_met", "met", ParameterSet());
+    insert_internal_module("_cuba", "cuba", ParameterSet());
+
+    auto inputs = configuration.getInputs();
+    for (const auto& input: inputs) {
+        insert_internal_module("_input", input, ParameterSet());
+    }
+
+    // Integrand
+    // Check if the user defined which integrand to use
+    std::vector<InputTag> integrands = configuration.getIntegrands();
+    if (!integrands.size()) {
+        LOG(fatal)
+            << "No integrand found. Define which module's output you want to use as the integrand using the lua `integrand` function.";
+        throw integrands_output_error("No integrand found");
+    }
+
+    // Insert the MoMEMta module, fetching the integrands
+    ParameterSet pset;
+    pset.set("inputs", integrands);
+    insert_internal_module("_momemta", "momemta", pset);
+
+    // All modules are correctly declared. Create a sorted list of modules to execute.
+    std::vector<Configuration::Module> modules_to_execute;
+    graph2::sort_modules(available_modules, module_instances_def, modules_to_execute);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Initialize shared memory pool for modules
+    m_pool.reset(new Pool());
+
+    // Create phase-space points vector, input for many modules
+    m_pool->current_module("cuba");
+    m_ps_points = m_pool->put<std::vector<double>>({"cuba", "ps_points"});
+    m_ps_weight = m_pool->put<double>({"cuba", "ps_weight"});
+
+    // For each input declared in the configuration, create pool entries for p4 and type
+    for (const auto& input: inputs) {
+        LOG(debug) << "Input declared: " << input;
+        m_pool->current_module(input);
+        m_inputs_p4.emplace(input, m_pool->put<LorentzVector>({input, "p4"}));
+        m_inputs_type.emplace(input, m_pool->put<int64_t>({input, "type"}));
+    }
+
+    // Create input for met
+    m_pool->current_module("met");
+    m_met = m_pool->put<LorentzVector>({"met", "p4"});
+
+    auto& light_modules = configuration.getModules();
     for (const auto& module: light_modules) {
         m_pool->current_module(module);
         try {
@@ -96,29 +150,21 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
         }
     }
 
+    // Retrieve all the input tags for the components of the integrand
+    m_pool->current_module("momemta");
+
+    for (const auto& component: integrands) {
+        m_integrands.push_back(m_pool->get<double>(component));
+        LOG(debug) << "Configuration declared integrand component using: " << component.toString();
+    }
+    m_n_components = m_integrands.size();
+
     m_n_dimensions = configuration.getNDimensions();
     LOG(info) << "Number of expected inputs: " << m_inputs_p4.size();
     LOG(info) << "Number of dimensions for integration: " << m_n_dimensions;
 
     // Resize pool ps-points vector
     m_ps_points->resize(m_n_dimensions);
-
-    // Integrand
-    // First, check if the user defined which integrand to use
-    std::vector<InputTag> integrands = configuration.getIntegrands();
-    if (!integrands.size()) {
-        LOG(fatal) << "No integrand found. Define which module's output you want to use as the integrand using the lua `integrand` function.";
-        throw integrands_output_error("No integrand found");
-    }
-
-    // Next, retrieve all the input tags for the components of the integrand
-    m_pool->current_module("momemta");
-
-    for(const auto& component: integrands) {
-        m_integrands.push_back(m_pool->get<double>(component));
-        LOG(debug) << "Configuration declared integrand component using: " << component.toString();
-    }
-    m_n_components = m_integrands.size();
 
     m_cuba_configuration = configuration.getCubaConfiguration();
 

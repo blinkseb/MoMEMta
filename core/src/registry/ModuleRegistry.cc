@@ -44,7 +44,10 @@ ModuleRegistry::ModuleRegistry() {
         .Output("p4")
         .Output("type");
     registerModule([builder]() { return builder.Build(); });
-    
+
+    builder = registration::ModuleDefBuilder("_momemta")
+        .Inputs("integrands");
+    registerModule([builder]() { return builder.Build(); });
 }
 
 void ModuleRegistry::registerModule(RegisterOp registration_op) {

@@ -22,6 +22,26 @@
 
 #include <ModuleDefUtils.h>
 
+namespace {
+const ParameterSet *findPSet(const momemta::ArgDef& input_def, const ParameterSet& parameters) {
+    const ParameterSet *pset = &parameters;
+    std::vector<momemta::AttrDef> nested_attributes = input_def.nested_attributes;
+    while (!nested_attributes.empty()) {
+        momemta::AttrDef nested_attribute = nested_attributes.front();
+        nested_attributes.erase(nested_attributes.begin());
+
+        if (pset->existsAs<ParameterSet>(nested_attribute.name))
+            pset = &pset->get<ParameterSet>(nested_attribute.name);
+        else {
+            pset = nullptr;
+            break;
+        }
+    }
+
+    return pset;
+}
+}
+
 bool momemta::validateModuleParameters(const ParameterSet& parameters, const ModuleList& available_modules) {
 
     // Get module definition
@@ -112,4 +132,22 @@ bool momemta::validateModuleParameters(const ParameterSet& parameters, const Mod
     }
 
     return errors.empty();
+}
+
+momemta::gtl::optional<std::vector<InputTag>> momemta::getInputTagsForInput(const ArgDef& input, const ParameterSet& parameters) {
+
+    const ParameterSet* pset = findPSet(input, parameters);
+    assert(pset || input.optional);
+
+    if (! pset)
+        return gtl::nullopt;
+
+    if (input.optional && !pset->exists(input.name))
+        return gtl::nullopt;
+
+    if (input.many) {
+        return pset->get<std::vector<InputTag>>(input.name);
+    } else {
+        return gtl::make_optional<std::vector<InputTag>>({pset->get<InputTag>(input.name)});
+    }
 }

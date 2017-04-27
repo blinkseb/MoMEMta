@@ -97,16 +97,16 @@ class LinearCombinator: public Module {
 };
 
 REGISTER_MODULE_NAME("VectorLinearCombinator", LinearCombinator<LorentzVector>)
-        .Input("inputs")
+        .Inputs("inputs")
         .Output("output")
         .Attr("coefficients:list(double)");
 
 REGISTER_MODULE_NAME("DoubleLinearCombinator", LinearCombinator<double>)
-        .Input("inputs")
+        .Inputs("inputs")
         .Output("output")
         .Attr("coefficients:list(double)");
 
 REGISTER_MODULE_NAME("IntLinearCombinator", LinearCombinator<int64_t>)
-        .Input("inputs")
+        .Inputs("inputs")
         .Output("output")
         .Attr("coefficients:list(double)");

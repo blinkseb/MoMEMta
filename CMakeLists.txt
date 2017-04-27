@@ -185,6 +185,7 @@ set(MOMEMTA_SOURCES
     "core/src/Configuration.cc"
     "core/src/ConfigurationReader.cc"
     "core/src/Graph.cc"
+    "core/src/Graph2.cc"
     "core/src/InputTag.cc"
     "core/src/LibraryManager.cc"
     "core/src/logging.cc"

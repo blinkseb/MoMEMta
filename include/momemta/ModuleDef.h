@@ -41,6 +41,7 @@ struct ArgDef {
     std::string name;
     std::string default_value; ///< Only meaningful for inputs
     bool optional; ///< Only meaningful for inputs
+    bool many; ///< Only meaningful for inputs. If True, this input points to a list instead of a single value
 
     /**
      * If not empty, this input is nested inside attributes. The order in this list is the nesting order

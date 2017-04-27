@@ -85,7 +85,19 @@ public:
      For lists use `[a, b, c]` format.
     */
     ModuleDefBuilder& Attr(const std::string& spec);
+
+    /**
+     * \brief Adds a global attribute to the module definition (and returns `*this`).
+     *
+     * \details \copydetails Attr()
+     */
     ModuleDefBuilder& GlobalAttr(const std::string& spec);
+
+    /**
+     * \brief Adds an optional attribute to the module definition (and returns `*this`).
+     *
+     * \details \copydetails Attr()
+     */
     ModuleDefBuilder& OptionalAttr(const std::string& spec);
 
     /**
@@ -94,9 +106,35 @@ public:
      The \p spec has format `<name>` or `<name>=<default>`
 
      where `<name>` matches regexp `[a-zA-Z][a-zA-Z0-9_]*`
+
+     Input can also be nested inside attributes. In this case, \p spec has format
+     `<attr>/[<attr>/]*<name>` where `<attr>` matches regex defined in Attr() and `<name>`
+     matches regexp defined above.
     */
+    /* TODO: Add support for type when defining inputs, in the same way as attributes
+       TODO: we can then ensure that inputs are connected to compatible outputs */
     ModuleDefBuilder& Input(const std::string& spec);
+
+    /**
+     * \brief Adds an optional input to the module definition (and returns `*this`).
+     *
+     * \details \copydetails Input()
+     */
     ModuleDefBuilder& OptionalInput(const std::string& spec);
+
+    /**
+     * \brief Adds inputs to the module definition (and returns `*this`).
+     *
+     * \details \copydetails Input()
+     */
+    ModuleDefBuilder& Inputs(const std::string& spec);
+
+    /**
+     * \brief Adds optional inputs to the module definition (and returns `*this`).
+     *
+     * \details \copydetails Input()
+     */
+    ModuleDefBuilder& OptionalInputs(const std::string& spec);
 
     ModuleDefBuilder& Output(const std::string& spec);
 

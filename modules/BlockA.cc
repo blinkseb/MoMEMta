@@ -185,6 +185,6 @@ class BlockA: public Module {
 REGISTER_MODULE(BlockA)
     .Input("p1")
     .Input("p2")
-    .OptionalInput("branches")
+    .OptionalInputs("branches")
     .Output("solutions")
     .GlobalAttr("energy:double");

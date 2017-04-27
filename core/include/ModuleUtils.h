@@ -21,8 +21,19 @@
 #include <momemta/ModuleRegistry.h>
 #include <momemta/ParameterSet.h>
 
+#include <lib/optional.h>
+
 namespace momemta {
 
 bool validateModuleParameters(const ParameterSet& parameters, const ModuleList& available_modules);
+
+/**
+ * Return the list of InputTag associated with a given input, if it exists
+ *
+ * \param input The input definition
+ * \param parameters Modules' parameters where to look for the InputTag
+ * \return The list of InputTag associated with \p input, if found in \p parameters.
+ */
+gtl::optional<std::vector<InputTag>> getInputTagsForInput(const ArgDef& input, const ParameterSet& parameters);
 
 }

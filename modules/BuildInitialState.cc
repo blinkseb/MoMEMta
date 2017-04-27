@@ -155,7 +155,7 @@ class BuildInitialState: public Module {
 };
 
 REGISTER_MODULE(BuildInitialState)
-        .Input("particles")
+        .Inputs("particles")
         .Output("partons")
         .GlobalAttr("energy:double")
         .Attr("do_transverse_boost:bool=false");

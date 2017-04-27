@@ -305,8 +305,8 @@ class MatrixElement: public Module {
 
 REGISTER_MODULE(MatrixElement)
         .Input("initialState")
-        .OptionalInput("jacobians")
-        .Input("particles/inputs")
+        .OptionalInputs("jacobians")
+        .Inputs("particles/inputs")
         .Output("output")
         .GlobalAttr("energy:double")
         .Attr("matrix_element:string")

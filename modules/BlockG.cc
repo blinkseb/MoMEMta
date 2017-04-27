@@ -219,6 +219,6 @@ REGISTER_MODULE(BlockG)
         .Input("p2")
         .Input("p3")
         .Input("p4")
-        .OptionalInput("branches")
+        .OptionalInputs("branches")
         .Output("solutions")
         .GlobalAttr("energy:double");

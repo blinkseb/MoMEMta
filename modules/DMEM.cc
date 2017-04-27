@@ -82,7 +82,7 @@ class DMEM: public Module {
 };
 
 REGISTER_MODULE(DMEM)
-        .Input("particles")
+        .Inputs("particles")
         .Input("ps_weight")
         .Input("me_output")
         .Output("hist")

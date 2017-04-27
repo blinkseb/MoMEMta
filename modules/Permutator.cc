@@ -102,6 +102,6 @@ class Permutator: public Module {
 
 REGISTER_MODULE(Permutator)
     .Input("ps_point")
-    .Input("inputs")
+    .Inputs("inputs")
     .Output("output");
 

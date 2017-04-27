@@ -75,5 +75,5 @@ class StandardPhaseSpace: public Module {
 };
 
 REGISTER_MODULE(StandardPhaseSpace)
-    .Input("particles")
+    .Inputs("particles")
     .Output("phase_space");
