@@ -37,7 +37,8 @@ struct Vertex {
 };
 
 struct Edge {
-    std::string name;
+    std::string description;
+    bool virt;
 };
 
 typedef boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, Vertex, Edge> Graph;
@@ -70,14 +71,74 @@ private:
     Graph graph;
 };
 
+class edge_writer {
+public:
+    edge_writer(Graph g) : graph(g) {}
+
+    template <class VertexOrEdge>
+    void operator()(std::ostream& out, const VertexOrEdge& e) const {
+        std::string color = "black";
+        std::string style = "solid";
+
+        if (graph[e].virt) {
+            style = "invis";
+        }
+
+        out << "[color=\"" << color << "\",style=\"" << style
+            << "\",label=\"" << graph[e].description << "\"]";
+    }
+private:
+    Graph graph;
+};
+
 void graphviz_export(const Graph& g, const std::string& filename) {
 
     std::ofstream f(filename.c_str());
 
     //auto vertices_name = boost::get(&Vertex::name, g);
-    auto edges_name = boost::get(&Edge::name, g);
+    //auto edges_name = boost::get(&Edge::description, g);
 
-    boost::write_graphviz(f, g, vertex_writer(g), make_label_writer(edges_name), boost::default_writer(), boost::get(&Vertex::id, g));
+    boost::write_graphviz(f, g, vertex_writer(g), edge_writer(g), boost::default_writer(), boost::get(&Vertex::id, g));
+}
+
+
+bool isConnectedToByOut(Graph& g, vertex_t vertex, vertex_t to) {
+    out_edge_iterator_t o, o_end;
+    std::tie(o, o_end) = boost::out_edges(vertex, g);
+
+    for (; o != o_end; ++o) {
+        vertex_t target = boost::target(*o, g);
+        if (target == to)
+            return true;
+
+        if (isConnectedToByOut(g, target, to))
+            return true;
+    }
+
+    return false;
+}
+
+bool isConnectedToByIn(Graph& g, vertex_t vertex, vertex_t to) {
+    in_edge_iterator_t i, i_end;
+    std::tie(i, i_end) = boost::in_edges(vertex, g);
+
+    for (; i != i_end; ++i) {
+        vertex_t source = boost::source(*i, g);
+        if (source == to)
+            return true;
+
+        if (isConnectedToByIn(g, source, to))
+            return true;
+    }
+
+    return false;
+}
+
+bool isConnectedTo(Graph& g, vertex_t vertex, vertex_t to) {
+    if (isConnectedToByOut(g, vertex, to))
+        return true;
+
+    return isConnectedToByIn(g, vertex, to);
 }
 
 void sort_modules(const momemta::ModuleList& available_modules,
@@ -154,7 +215,11 @@ void sort_modules(const momemta::ModuleList& available_modules,
                             std::tie(e, inserted) = boost::add_edge(*vtx_it, vertices.at(module.name), g);
 
                             auto& edge = g[e];
-                            edge.name = inputTag.toString();
+                            edge.virt = false;
+                            edge.description = inputTag.parameter;
+                            if (inputTag.isIndexed()) {
+                                edge.description += "[" + std::to_string(inputTag.index) + "]";
+                            }
                         }
                     }
                 }
@@ -163,11 +228,16 @@ void sort_modules(const momemta::ModuleList& available_modules,
     }
 
     // Modules are connected together. Find all vertices not connected to anything and remove them
-
     for (auto it = vertices.begin(), ite = vertices.end(); it != ite;) {
         if (boost::out_degree(it->second, g) == 0) {
 
             auto& vertex = g[it->second];
+
+            // Don't consider internal modules
+            if (vertex.def.internal) {
+                ++it;
+                continue;
+            }
 
             // Check in the definition if this module has any output
             // If not, we keep it.
@@ -186,6 +256,41 @@ void sort_modules(const momemta::ModuleList& available_modules,
             ++it;
     }
 
+    // We need to make sure that any dependencies of a module inside a looper
+    // is ran before the looper itself.
+    for (const auto& vertex: vertices) {
+        if (g[vertex.second].type == "Looper") {
+
+            out_edge_iterator_t e, e_end;
+            std::tie(e, e_end) = boost::out_edges(vertex.second, g);
+
+            // Iterator over all edges this Looper vertex is connected to
+            for (; e != e_end; ++e) {
+                auto target = boost::target(*e, g);
+
+                // Iterate over all edges connected to the module
+                in_edge_iterator_t i, i_end;
+                std::tie(i, i_end) = boost::in_edges(target, g);
+
+                for (; i != i_end; ++i) {
+                    auto source = boost::source(*i, g);
+
+                    if (source == vertex.second)
+                        continue;
+
+                    // Check if the source vertex is connected to the looper in any way
+                    if (!isConnectedTo(g, source, vertex.second)) {
+                        edge_t e;
+                        bool inserted;
+                        std::tie(e, inserted) = boost::add_edge(source, vertex.second, g);
+                        g[e].description = "virtual link";
+                        g[e].virt = true;
+                    }
+                }
+            }
+        }
+    }
+
     // Ensure ids are continuous
     id = 0;
     for (std::tie(vtx_it, vtx_it_end) = boost::vertices(g); vtx_it != vtx_it_end; vtx_it++) {
@@ -195,14 +300,35 @@ void sort_modules(const momemta::ModuleList& available_modules,
     // Sort graph
     std::list<vertex_t> sorted_vertices;
     try {
-        boost::topological_sort(g, std::front_inserter(sorted_vertices), boost::vertex_index_map(boost::get(&Vertex::id, g)));
+        boost::topological_sort(g, std::front_inserter(sorted_vertices),
+                                boost::vertex_index_map(boost::get(&Vertex::id, g)));
     } catch (...) {
         graphviz_export(g, "graph.debug");
         LOG(fatal) << "Exception while sorting the graph. Graphviz representation saved as graph.debug";
         throw;
     }
 
-    graphviz_export(g, "graph.dot");
+    // Remove vertices corresponding to internal modules
+    sorted_vertices.erase(std::remove_if(sorted_vertices.begin(), sorted_vertices.end(),
+                                         [&g](const vertex_t& vertex) -> bool {
+                                             return g[vertex].def.internal;
+                                         }), sorted_vertices.end());
+
+    for (const auto vertex: sorted_vertices) {
+        LOG(info) << "[Graph2] Running " << g[vertex].name;
+    }
+
+    graphviz_export(g, "graph2.dot");
+
+    for (auto vertex: sorted_vertices) {
+        auto it = std::find_if(requested_modules.begin(), requested_modules.end(),
+                               [&vertex, &g](const Configuration::Module& module) -> bool {
+                                   return module.name == g[vertex].name;
+                               });
+
+        assert(it != requested_modules.end());
+        modules.push_back(*it);
+    }
 }
 
 }

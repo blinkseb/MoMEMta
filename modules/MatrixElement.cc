@@ -313,6 +313,6 @@ REGISTER_MODULE(MatrixElement)
         .Attr("matrix_element_parameters:pset")
         .OptionalAttr("override_parameters:pset")
         .Attr("particles:pset")
-        .Attr("pdf:string")
-        .Attr("pdf_scale:double")
-        .Attr("use_pdf:bool=true");
+        .Attr("use_pdf:bool=true")
+        .OptionalAttr("pdf:string")
+        .OptionalAttr("pdf_scale:double");

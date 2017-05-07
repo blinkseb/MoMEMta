@@ -102,7 +102,7 @@ class BlockF: public Module {
 
             m1 = parameters.get<double>("m1", 0.);
             m2 = parameters.get<double>("m2", 0.);
-            
+
             sqrt_s = parameters.globalParameters().get<double>("energy");
 
             s13 = get<double>(parameters.get<InputTag>("s13"));
@@ -130,12 +130,12 @@ class BlockF: public Module {
             // Don't spend time on unphysical part of phase-space
             if (sq_m1 + sq_m3 >= *s13 || sq_m2 + sq_m4 >= *s24 || *s13 + *s24 > SQ(sqrt_s))
                 return Status::NEXT;
-            
+
             const double p3x = p3->Px();
             const double p3y = p3->Py();
             const double p3z = p3->Pz();
             const double E3 = p3->E();
- 
+
             const double p4x = p4->Px();
             const double p4y = p4->Py();
             const double p4z = p4->pz();
@@ -146,18 +146,18 @@ class BlockF: public Module {
             for (size_t i = 0; i < m_branches.size(); i++) {
                 pb += *m_branches[i];
             }
-            
+
             const double Eb = pb.E();
             const double pbx = pb.Px();
             const double pby = pb.Py();
             const double pbz = pb.Pz();
- 
+
             const double q1 = *m_ps_point1;
             const double q2 = *m_ps_point2;
 
             const double Etot = sqrt_s * (q1 + q2) / 2 - Eb;
             const double ptotz = sqrt_s * (q1 - q2) / 2 - pbz;
-            
+
             const double X = 0.5 * (- sq_m1 - sq_m3 + *s13);
             const double Y = 0.5 * (- sq_m2 - sq_m4 + *s24);
 
@@ -178,13 +178,13 @@ class BlockF: public Module {
              *
              * where one has used that E1 = Etot - E2
              */
-            
+
             const double den = p3z * p4x - p3x * p4z;
 
             const double A1x = - (E4 * p3z - E3 * p4z) / den;
             const double B1x = (p3z * p4y - p3y * p4z) / den;
             const double C1x = - (p4z * (E3 * Etot - p3z * ptotz + p3y * pby - X) - p3z * (Y - p4x * pbx)) / den;
-            
+
             const double A1z = (E4 * p3x - E3 * p4x) / den;
             const double B1z = (p3y * p4x - p3x * p4y) / den;
             const double C1z = (p4x * (E3 * Etot + p3y * pby + p3x * pbx - X) - p3x * (Y + p4z * ptotz)) / den;
@@ -211,9 +211,9 @@ class BlockF: public Module {
             const double a10 = - 2 * (A1x * C1x + A1z * C1z + Etot);
             const double a01 = - 2 * (B1x * C1x + B1z * C1z + pby);
             const double a00 = SQ(Etot) - (SQ(C1x) + SQ(C1z) + SQ(pby) + sq_m1);
-          
+
             std::vector<double> p2y_sol;
-            const bool foundSolution = solveQuadratic(a02 + SQ(a) * a20 + a * a11, 
+            const bool foundSolution = solveQuadratic(a02 + SQ(a) * a20 + a * a11,
                                                 2 * a * b * a20 + b * a11 + a01 + a * a10,
                                                 SQ(b) * a20 + b * a10 + a00,
                                                 p2y_sol);
@@ -228,10 +228,10 @@ class BlockF: public Module {
                     continue;
 
                 const double E1 = Etot - E2;
-                
+
                 if (E1 <= 0)
                     continue;
-                
+
                 const double p1x = A1x * E2 + B1x * p2y + C1x;
                 const double p1y = - p2y - pby;
                 const double p1z = A1z * E2 + B1z * p2y + C1z;
@@ -257,7 +257,7 @@ class BlockF: public Module {
 
             return solutions->size() > 0 ? Status::OK : Status::NEXT;
         }
-    
+
     private:
         double sqrt_s;
 
@@ -284,4 +284,6 @@ REGISTER_MODULE(BlockF)
         .Input("p4")
         .OptionalInputs("branches")
         .Output("solutions")
-        .GlobalAttr("energy:double");
+        .GlobalAttr("energy:double")
+        .Attr("m1:double=0")
+        .Attr("m2:double=0");

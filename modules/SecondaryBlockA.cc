@@ -84,9 +84,9 @@ class SecondaryBlockA: public Module {
                 s12 = get<double>(parameters.get<InputTag>("s12"));
                 s123 = get<double>(parameters.get<InputTag>("s123"));
                 s1234 = get<double>(parameters.get<InputTag>("s1234"));
-                
+
                 m1 = parameters.get<double>("m1", 0.);
-            
+
                 m_p2 = get<LorentzVector>(parameters.get<InputTag>("p2"));
                 m_p3 = get<LorentzVector>(parameters.get<InputTag>("p3"));
                 m_p4 = get<LorentzVector>(parameters.get<InputTag>("p4"));
@@ -225,4 +225,5 @@ REGISTER_MODULE(SecondaryBlockA)
         .Input("p3")
         .Input("p4")
         .Output("solutions")
-        .GlobalAttr("energy");
+        .GlobalAttr("energy")
+        .Attr("m1:double=0");

@@ -252,6 +252,10 @@ Graph build(const Pool::DescriptionMap& description, std::vector<ModulePtr>& mod
                     return Module::is_virtual_module(g[vertex].name) || !g[vertex].module;
                 }), sorted_vertices.end());
 
+    for (const auto vertex: sorted_vertices) {
+        LOG(info) << "[Graph] Running " << g[vertex].name;
+    }
+
     // Re-fill modules vector with new content (sorted & cleaned)
     for (const auto& vertex: sorted_vertices) {
         assert(g[vertex].module);
@@ -327,6 +331,7 @@ Graph build(const Pool::DescriptionMap& description, std::vector<ModulePtr>& mod
                 "execution path");
     }
 
+    graphviz_export(g, "graph1.dot");
     return g;
 }
 

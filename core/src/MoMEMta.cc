@@ -93,7 +93,7 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
 
     // Insert the MoMEMta module, fetching the integrands
     ParameterSet pset;
-    pset.set("inputs", integrands);
+    pset.set("integrands", integrands);
     insert_internal_module("_momemta", "momemta", pset);
 
     // All modules are correctly declared. Create a sorted list of modules to execute.
