@@ -67,6 +67,9 @@ struct ModuleDef {
 
     /// If true, this module is internal and not associated to a real implementation
     bool internal = false;
+
+    /// A sticky module is a module which can't be removed from the graph, even if it's output is not used
+    bool sticky = false;
 };
 
 using ModuleList = std::vector<ModuleDef>;

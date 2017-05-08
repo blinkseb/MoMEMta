@@ -138,6 +138,13 @@ public:
 
     ModuleDefBuilder& Output(const std::string& spec);
 
+    /**
+     * \brief Flag this module as sticky
+     *
+     * A sticky module is a module which can't be removed from the graph, even if its outputs are not used
+     */
+    ModuleDefBuilder& IsSticky();
+
     ModuleRegistrationData Build() const;
 
     std::string name() const;

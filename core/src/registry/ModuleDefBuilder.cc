@@ -227,6 +227,11 @@ ModuleDefBuilder& ModuleDefBuilder::OptionalAttr(const std::string& spec) {
     return *this;
 }
 
+ModuleDefBuilder& ModuleDefBuilder::IsSticky() {
+    reg_data.module_def.sticky = true;
+    return *this;
+}
+
 std::string ModuleDefBuilder::name() const {
     return reg_data.module_def.name;
 }

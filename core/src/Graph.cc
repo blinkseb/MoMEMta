@@ -230,8 +230,8 @@ void sort_modules(const momemta::ModuleList& available_modules,
 
             auto& vertex = g[it->second];
 
-            // Don't consider internal modules
-            if (vertex.def.internal) {
+            // Don't consider internal or sticky modules
+            if (vertex.def.internal || vertex.def.sticky) {
                 ++it;
                 continue;
             }
