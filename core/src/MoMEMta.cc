@@ -24,15 +24,14 @@
 
 #include <momemta/Configuration.h>
 #include <momemta/Logging.h>
-#include <momemta/Path.h>
 #include <momemta/ParameterSet.h>
 #include <momemta/Utils.h>
 #include <momemta/Unused.h>
 
 #include <Graph.h>
-#include <Graph2.h>
 #include <ModuleUtils.h>
 #include <lua/utils.h>
+#include <Path.h>
 
 #ifdef DEBUG_TIMING
 using namespace std::chrono;
@@ -97,25 +96,14 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     insert_internal_module("_momemta", "momemta", pset);
 
     // All modules are correctly declared. Create a sorted list of modules to execute.
-    std::vector<Configuration::ModuleDecl> modules_to_execute;
-    graph2::sort_modules(available_modules, module_instances_def, modules_to_execute);
+    graph2::SortedModuleList modules_to_execute;
+    graph2::sort_modules(available_modules, module_instances_def, configuration.getPaths(), modules_to_execute);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    // We now have a sorted list of module declaration, split into the different execution path
+    // We can now create a new instance of each module in the correct order. For that, we loop over the list of
+    // modules in reverse order, creating first modules belonging to the last execution path.
+    // We also replace on-the-fly the Looper `path` parameter with the actual list of module to execute, replacing
+    // the list of module declared in the configuration file
 
     // Initialize shared memory pool for modules
     m_pool.reset(new Pool());
@@ -137,18 +125,42 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     m_pool->current_module("met");
     m_met = m_pool->put<LorentzVector>({"met", "p4"});
 
-    auto& light_modules = configuration.getModules();
-    for (const auto& module: light_modules) {
-        m_pool->current_module(module);
-        try {
-            //m_modules.push_back(ModuleFactory::get().create(module.type, m_pool, *module.parameters));
-            m_modules.push_back(momemta::ModuleRegistry::get().find(module.type).maker->create(m_pool, *module.parameters));
-        } catch (...) {
-            LOG(fatal) << "Exception while trying to create module " << module.type << "::" << module.name
-                       << ". See message above for a (possible) more detailed description of the error.";
-            std::rethrow_exception(std::current_exception());
+    // Keep track of the instantiated modules in their own execution path
+    std::map<boost::uuids::uuid, std::vector<ModulePtr>> module_instances;
+
+    for (auto it = modules_to_execute.rbegin(); it != modules_to_execute.rend(); ++it) {
+
+        for (auto module_decl_it = it->second.begin(); module_decl_it != it->second.end(); ++module_decl_it) {
+
+            std::unique_ptr<ParameterSet> params(module_decl_it->parameters->clone());
+
+            if (module_decl_it->type == "Looper") {
+                // Switch the "path" parameter to the list of module properly instantiated
+                auto config_path_id = params->get<ExecutionPath>("path").id;
+
+                // Remove config path
+                params->remove("path");
+
+                // Insert the new one
+                params->raw_set("path", Path(module_instances.at(config_path_id)));
+            }
+
+            m_pool->current_module(module_decl_it->name);
+            try {
+                module_instances[it->first].push_back(momemta::ModuleRegistry::get()
+                                                              .find(module_decl_it->type).maker
+                                                              ->create(m_pool, *params));
+            } catch (...) {
+                LOG(fatal) << "Exception while trying to create module " << module_decl_it->type
+                           << "::" << module_decl_it->name
+                           << ". See message above for a (possible) more detailed description of the error.";
+                std::rethrow_exception(std::current_exception());
+            }
         }
+
     }
+
+    m_modules = module_instances[DEFAULT_EXECUTION_PATH];
 
     // Retrieve all the input tags for the components of the integrand
     m_pool->current_module("momemta");
@@ -168,27 +180,11 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
 
     m_cuba_configuration = configuration.getCubaConfiguration();
 
-    const Pool::DescriptionMap& description = m_pool->description();
-    graph::build(description, m_modules, configuration.getPaths(), [&description, this](const std::string& module) {
-                // Clean the pool for each removed module
-                const Description& d = description.at(module);
-                for (const auto& input: d.inputs)
-                    this->m_pool->remove_if_invalid(input);
-                for (const auto& output: d.outputs)
-                    this->m_pool->remove({module, output});
-            });
-
     // Freeze the pool after removing unneeded modules
     m_pool->freeze();
 
     for (const auto& module: m_modules) {
         module->configure();
-    }
-
-    // Reset configuration path to the configuration state
-    for (auto& path: configuration.getPaths()) {
-        path->modules.clear();
-        path->resolved = false;
     }
 
     // Register logging function

@@ -22,8 +22,9 @@
 
 #include <momemta/config.h>
 #include <momemta/ParameterSet.h>
-#include <momemta/Path.h>
 #include <momemta/Solution.h>
+
+#include <Path.h>
 
 #ifdef DEBUG_TIMING
 #include <chrono>
@@ -119,7 +120,6 @@ class Looper: public Module {
         };
 
         virtual void configure() override {
-            path.freeze();
             CALL(configure);
         }
 

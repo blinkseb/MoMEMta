@@ -18,8 +18,9 @@
 
 #include <momemta/Configuration.h>
 #include <momemta/ConfigurationReader.h>
-#include <momemta/Path.h>
 #include <momemta/ParameterSet.h>
+
+#include <ExecutionPath.h>
 
 Configuration::ModuleDecl::ModuleDecl(const Configuration::ModuleDecl& other) {
     name = other.name;
@@ -86,7 +87,7 @@ std::vector<InputTag> Configuration::getIntegrands() const {
     return integrands;
 }
 
-std::vector<PathElementsPtr> Configuration::getPaths() const {
+std::vector<ExecutionPath*> Configuration::getPaths() const {
     return paths;
 }
 

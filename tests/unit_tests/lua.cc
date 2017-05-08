@@ -32,15 +32,15 @@
 #include <momemta/ILuaCallback.h>
 #include <momemta/Logging.h>
 #include <momemta/ModuleFactory.h>
+#include <momemta/ModuleRegistry.h>
 #include <momemta/ParameterSet.h>
-#include <momemta/Path.h>
 
+#include <ExecutionPath.h>
 #include <lua/LazyTable.h>
 #include <lua/ParameterSetParser.h>
 #include <lua/Path.h>
 #include <lua/Types.h>
 #include <lua/utils.h>
-#include <momemta/ModuleRegistry.h>
 
 void execute_string(std::shared_ptr<lua_State> L, const std::string& code) {
     if (luaL_dostring(L.get(), code.c_str())) {
@@ -61,7 +61,7 @@ class LuaCallbackMock: public ILuaCallback {
             integrands.push_back(tag);
         }
 
-        virtual void onNewPath(PathElementsPtr path) override {
+        virtual void onNewPath(ExecutionPath* path) override {
             paths.push_back(path);
         }
 
@@ -75,7 +75,7 @@ class LuaCallbackMock: public ILuaCallback {
 
         std::vector<std::pair<std::string, std::string>> modules;
         std::vector<InputTag> integrands;
-        std::vector<PathElementsPtr> paths;
+        std::vector<ExecutionPath*> paths;
         std::size_t n_dimensions;
         std::vector<std::string> inputs;
 };
@@ -430,7 +430,7 @@ TEST_CASE("lua parsing utilities", "[lua]") {
         std::string type_name = get_custom_type_name(L.get(), -1);
         REQUIRE(type_name == LUA_PATH_TYPE_NAME);
 
-        PathElementsPtr path = lua::path_get(L.get(), -1);
+        ExecutionPath* path = lua::path_get(L.get(), -1);
         REQUIRE(path != nullptr);
 
         REQUIRE(path->elements.size() == 3);
@@ -449,7 +449,7 @@ TEST_CASE("lua parsing utilities", "[lua]") {
         REQUIRE(type == LUA_TUSERDATA);
 
         auto path = get_custom_type_ptr(L.get(), -1);
-        REQUIRE(path.type() == typeid(Path));
+        REQUIRE(path.type() == typeid(ExecutionPath));
 
         lua_pop(L.get(), 1);
     }

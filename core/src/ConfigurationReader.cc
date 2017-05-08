@@ -24,8 +24,8 @@
 #include <momemta/ConfigurationReader.h>
 #include <momemta/ModuleFactory.h>
 #include <momemta/ParameterSet.h>
-#include <momemta/Path.h>
 
+#include <ExecutionPath.h>
 #include <lua/LazyTable.h>
 #include <lua/ParameterSetParser.h>
 #include <lua/utils.h>
@@ -94,7 +94,7 @@ void ConfigurationReader::onIntegrandDeclared(const InputTag& tag) {
     configuration.integrands.push_back(tag);
 }
 
-void ConfigurationReader::onNewPath(PathElementsPtr path) {
+void ConfigurationReader::onNewPath(ExecutionPath* path) {
     configuration.paths.push_back(path);
 }
 

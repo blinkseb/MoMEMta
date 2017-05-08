@@ -1,6 +1,6 @@
 /*
  *  MoMEMta: a modular implementation of the Matrix Element Method
- *  Copyright (C) 2016  Universite catholique de Louvain (UCL), Belgium
+ *  Copyright (C) 2017  Universite catholique de Louvain (UCL), Belgium
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,36 +21,19 @@
 #include <string>
 #include <vector>
 
-struct lua_State;
-struct ExecutionPath;
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 
 /**
- * \file
- * \brief Lua binding of C++ Path class
+ * \brief An execution path, as defined from the configuration file
+ *
+ * An execution path is defined by an unique id (uuid) and a set of modules' name (elements).
  */
+static const auto DEFAULT_EXECUTION_PATH = boost::uuids::nil_uuid();
+struct ExecutionPath {
+    boost::uuids::uuid id;
+    std::vector<std::string> elements;
 
-#define LUA_PATH_TYPE_NAME "Path"
-
-namespace lua {
-
-/**
- * \brief Register Path into lua runtime
- */
-void path_register(lua_State* L, void* ptr);
-
-/**
- * \brief Create a new instance of Path
- **/
-int path_new(lua_State* L);
-
-/**
- * \brief Free an instance of Path
- */
-int path_free(lua_State* L);
-
-/**
- * \brief Retrieve an instance of Path from the lua stack
- */
-ExecutionPath* path_get(lua_State* L, int index);
-
-}
+    ExecutionPath();
+    ExecutionPath(const ExecutionPath&) = default;
+};

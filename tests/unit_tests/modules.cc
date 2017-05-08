@@ -77,13 +77,13 @@ std::shared_ptr<std::vector<LorentzVector>> addInputParticles(std::shared_ptr<Po
     inputs->push_back( { 71.3899612426758, 96.0094833374023, -77.2513122558594, 142.492813110352 });
     inputs->push_back( { -18.9018573760986, 10.0896110534668, -0.602926552295686, 21.4346446990967 });
     inputs->push_back( { -55.7908325195313, -111.59294128418, -122.144721984863, 174.66259765625 });
-    
+
     // Some random massless 4-vectors to be used by the tests
     inputs->push_back( { 26.2347,76.1854,32.6172,86.9273 } );
     inputs->push_back( { -27.3647,30.2536,38.5939,56.1569 } );
     inputs->push_back( { -7.0817,-63.9966,-34.8497,73.2135 } );
     inputs->push_back( { 80.756,3.12662,33.0355,87.3078 } );
-    
+
     return inputs;
 }
 
@@ -92,7 +92,7 @@ TEST_CASE("Modules", "[modules]") {
     std::shared_ptr<ParameterSetMock> parameters;
 
     auto createModule = [&pool, &parameters](const std::string& type) {
-        Configuration::Module module;
+        Configuration::ModuleDecl module;
         module.name = type;
         module.type = type;
         module.parameters.reset(parameters->clone());
@@ -176,7 +176,7 @@ TEST_CASE("Modules", "[modules]") {
         REQUIRE(*output == Approx((max + min) / 2.));
         REQUIRE(*jacobian == Approx(expected_jacobian));
     }
-    
+
     SECTION("BlockA") {
 
         parameters.reset(new ParameterSetMock("BlockA"));
@@ -184,7 +184,7 @@ TEST_CASE("Modules", "[modules]") {
         double sqrt_s = 13000;
 
         parameters->set("energy", sqrt_s);
-        
+
         parameters->set("p1", InputTag("input", "particles", 0));
         parameters->set("p2", InputTag("input", "particles", 1));
         parameters->set("branches", std::vector<InputTag>( { InputTag("input", "particles", 2) } ));
@@ -205,13 +205,13 @@ TEST_CASE("Modules", "[modules]") {
             REQUIRE(solution.values.at(0).M() == Approx(input_particles->at(0).M()));
             REQUIRE(solution.values.at(0).Phi() == Approx(input_particles->at(0).Phi()));
             REQUIRE(solution.values.at(0).Theta() == Approx(input_particles->at(0).Theta()));
-            
+
             REQUIRE(solution.values.at(1).M() == Approx(input_particles->at(1).M()));
             REQUIRE(solution.values.at(1).Phi() == Approx(input_particles->at(1).Phi()));
             REQUIRE(solution.values.at(1).Theta() == Approx(input_particles->at(1).Theta()));
         }
     }
-    
+
     SECTION("BlockB") {
 
         parameters.reset(new ParameterSetMock("BlockB"));
@@ -221,11 +221,11 @@ TEST_CASE("Modules", "[modules]") {
 
         parameters->set("energy", sqrt_s);
         parameters->set("pT_is_met", pT_is_met);
-        
+
         parameters->set("s12", InputTag("mockS", "s12"));
         double s_12 = SQ(200);
         auto s12 = pool->put<double>({"mockS", "s12"});
-        *s12 = s_12; 
+        *s12 = s_12;
 
         parameters->set("p2", InputTag("input", "particles", 0));
 
@@ -240,7 +240,7 @@ TEST_CASE("Modules", "[modules]") {
             REQUIRE(solution.valid == true);
 
             LorentzVector test_p12 = input_particles->at(0) + solution.values.at(0);
-            
+
             REQUIRE(test_p12.M2() == Approx(s_12));
             REQUIRE(test_p12.Pt() == Approx(0));
             REQUIRE(solution.values.at(0).M() / solution.values.at(0).E() == Approx(0));
@@ -359,14 +359,14 @@ TEST_CASE("Modules", "[modules]") {
             REQUIRE(solution.values.at(1).M() / solution.values.at(1).E() == Approx(0));
         }
     }
-    
+
     SECTION("BlockE") {
 
         parameters.reset(new ParameterSetMock("BlockE"));
 
         double sqrt_s = 13000;
         parameters->set("energy", sqrt_s);
-        
+
         parameters->set("s13", InputTag("mockS", "s13"));
         parameters->set("s24", InputTag("mockS", "s24"));
         parameters->set("s_hat", InputTag("mockS", "s_hat"));
@@ -398,7 +398,7 @@ TEST_CASE("Modules", "[modules]") {
             LorentzVector test_p13 = input_particles->at(0) + solution.values.at(0);
             LorentzVector test_p24 = input_particles->at(2) + solution.values.at(1);
             LorentzVector test_pT = test_p13 + test_p24;
- 
+
             REQUIRE(test_p13.M2() == Approx(s_13));
             REQUIRE(test_p24.M2() == Approx(s_24));
 
@@ -410,14 +410,14 @@ TEST_CASE("Modules", "[modules]") {
             REQUIRE(solution.values.at(1).M() / solution.values.at(1).E() == Approx(0));
         }
     }
-    
+
     SECTION("BlockF") {
 
         parameters.reset(new ParameterSetMock("BlockF"));
 
         double sqrt_s = 13000;
         parameters->set("energy", sqrt_s);
-        
+
         parameters->set("s13", InputTag("mockS", "s13"));
         parameters->set("s24", InputTag("mockS", "s24"));
         parameters->set("q1", InputTag("mockS", "q1"));
@@ -449,7 +449,7 @@ TEST_CASE("Modules", "[modules]") {
             LorentzVector test_p13 = input_particles->at(0) + solution.values.at(0);
             LorentzVector test_p24 = input_particles->at(2) + solution.values.at(1);
             LorentzVector test_pT = test_p13 + test_p24;
-            
+
             REQUIRE(test_p13.M2() == Approx(s_13));
             REQUIRE(test_p24.M2() == Approx(s_24));
 
@@ -461,14 +461,14 @@ TEST_CASE("Modules", "[modules]") {
             REQUIRE(solution.values.at(1).M() / solution.values.at(1).E() == Approx(0));
         }
     }
-    
+
     SECTION("BlockG") {
 
         parameters.reset(new ParameterSetMock("BlockG"));
 
         double sqrt_s = 13000;
         parameters->set("energy", sqrt_s);
-        
+
         parameters->set("s12", InputTag("mockS", "s12"));
         parameters->set("s34", InputTag("mockS", "s34"));
 
@@ -477,7 +477,7 @@ TEST_CASE("Modules", "[modules]") {
 
         *pool->put<double>({"mockS", "s12"}) = s_12;
         *pool->put<double>({"mockS", "s34"}) = s_34;
-        
+
         parameters->set("p1", InputTag("input", "particles", 4));
         parameters->set("p2", InputTag("input", "particles", 5));
         parameters->set("p3", InputTag("input", "particles", 6));
@@ -496,7 +496,7 @@ TEST_CASE("Modules", "[modules]") {
             LorentzVector test_p12 = solution.values.at(0) + solution.values.at(1);
             LorentzVector test_p34 = solution.values.at(2) + solution.values.at(3);
             LorentzVector test_pT = test_p12 + test_p34;
-            
+
             REQUIRE(test_p12.M2() == Approx(s_12));
             REQUIRE(test_p34.M2() == Approx(s_34));
 
@@ -505,29 +505,29 @@ TEST_CASE("Modules", "[modules]") {
             REQUIRE(solution.values.at(0).M() / solution.values.at(0).E() == Approx(0));
             REQUIRE(solution.values.at(0).Phi() == Approx(input_particles->at(4).Phi()));
             REQUIRE(solution.values.at(0).Theta() == Approx(input_particles->at(4).Theta()));
-            
+
             REQUIRE(solution.values.at(1).M() / solution.values.at(1).E() == Approx(0));
             REQUIRE(solution.values.at(1).Phi() == Approx(input_particles->at(5).Phi()));
             REQUIRE(solution.values.at(1).Theta() == Approx(input_particles->at(5).Theta()));
-            
+
             REQUIRE(solution.values.at(2).M() / solution.values.at(2).E() == Approx(0));
             REQUIRE(solution.values.at(2).Phi() == Approx(input_particles->at(6).Phi()));
             REQUIRE(solution.values.at(2).Theta() == Approx(input_particles->at(6).Theta()));
-            
+
             REQUIRE(solution.values.at(3).M() / solution.values.at(3).E() == Approx(0));
             REQUIRE(solution.values.at(3).Phi() == Approx(input_particles->at(7).Phi()));
             REQUIRE(solution.values.at(3).Theta() == Approx(input_particles->at(7).Theta()));
-            
+
         }
     }
-    
+
     SECTION("SecondaryBlockA") {
 
         parameters.reset(new ParameterSetMock("SecondaryBlockA"));
 
         double sqrt_s = 13000;
         parameters->set("energy", sqrt_s);
-        
+
         parameters->set("s12", InputTag("mockS", "s12"));
         parameters->set("s123", InputTag("mockS", "s123"));
         parameters->set("s1234", InputTag("mockS", "s1234"));
@@ -557,7 +557,7 @@ TEST_CASE("Modules", "[modules]") {
             LorentzVector test_p12 = input_particles->at(0) + solution.values.at(0);
             LorentzVector test_p123 = input_particles->at(2) + test_p12;
             LorentzVector test_p1234 = input_particles->at(1) + test_p123;
-            
+
             REQUIRE(test_p12.M2() == Approx(s_12));
             REQUIRE(test_p123.M2() == Approx(s_123));
             REQUIRE(test_p1234.M2() == Approx(s_1234));
@@ -565,14 +565,14 @@ TEST_CASE("Modules", "[modules]") {
             REQUIRE(solution.values.at(0).M() / solution.values.at(0).E() == Approx(0));
         }
     }
-    
+
     SECTION("SecondaryBlockB") {
 
         parameters.reset(new ParameterSetMock("SecondaryBlockB"));
 
         double sqrt_s = 13000;
         parameters->set("energy", sqrt_s);
-        
+
         parameters->set("s12", InputTag("mockS", "s12"));
         parameters->set("s123", InputTag("mockS", "s123"));
 
@@ -598,7 +598,7 @@ TEST_CASE("Modules", "[modules]") {
 
             LorentzVector test_p12 = input_particles->at(1) + solution.values.at(0);
             LorentzVector test_p123 = input_particles->at(2) + test_p12;
-            
+
             REQUIRE(test_p12.M2() == Approx(s_12));
             REQUIRE(test_p123.M2() == Approx(s_123));
 
@@ -606,14 +606,14 @@ TEST_CASE("Modules", "[modules]") {
             REQUIRE(solution.values.at(0).Phi() == Approx(input_particles->at(0).Phi()));
         }
     }
-    
+
     SECTION("SecondaryBlockCD") {
 
         parameters.reset(new ParameterSetMock("SecondaryBlockCD"));
 
         double sqrt_s = 13000;
         parameters->set("energy", sqrt_s);
-        
+
         parameters->set("s12", InputTag("mockS", "s12"));
         double s_12 = SQ(50);
         *pool->put<double>({"mockS", "s12"}) = s_12;
@@ -632,21 +632,21 @@ TEST_CASE("Modules", "[modules]") {
             REQUIRE(solution.valid == true);
 
             LorentzVector test_p12 = input_particles->at(2) + solution.values.at(0);
-            
+
             REQUIRE(test_p12.M2() == Approx(s_12));
 
             REQUIRE(solution.values.at(0).Phi() == Approx(input_particles->at(0).Phi()));
             REQUIRE(solution.values.at(0).Theta() == Approx(input_particles->at(0).Theta()));
         }
     }
-    
+
     SECTION("SecondaryBlockE") {
 
         parameters.reset(new ParameterSetMock("SecondaryBlockE"));
 
         double sqrt_s = 13000;
         parameters->set("energy", sqrt_s);
-        
+
         parameters->set("s12", InputTag("mockS", "s12"));
         parameters->set("s123", InputTag("mockS", "s123"));
 
@@ -672,14 +672,14 @@ TEST_CASE("Modules", "[modules]") {
 
             LorentzVector test_p12 = solution.values.at(0) + solution.values.at(1);
             LorentzVector test_p123 = input_particles->at(3) + test_p12;
-            
+
             REQUIRE(test_p12.M2() == Approx(s_12));
             REQUIRE(test_p123.M2() == Approx(s_123));
 
             REQUIRE(solution.values.at(0).M() == Approx(input_particles->at(0).M()));
             REQUIRE(solution.values.at(0).Phi() == Approx(input_particles->at(0).Phi()));
             REQUIRE(solution.values.at(0).Theta() == Approx(input_particles->at(0).Theta()));
-            
+
             REQUIRE(solution.values.at(1).M() / solution.values.at(1).E() == Approx(0));
             REQUIRE(solution.values.at(1).Phi() == Approx(input_particles->at(5).Phi()));
             REQUIRE(solution.values.at(1).Theta() == Approx(input_particles->at(5).Theta()));

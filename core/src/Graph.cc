@@ -1,22 +1,106 @@
+/*
+ *  MoMEMta: a modular implementation of the Matrix Element Method
+ *  Copyright (C) 2017  Universite catholique de Louvain (UCL), Belgium
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <Graph.h>
 
+#include <ModuleUtils.h>
+
+#include <boost/config.hpp>
+#include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/topological_sort.hpp>
 
-#include <momemta/Logging.h>
-#include <momemta/Module.h>
-#include <momemta/ParameterSet.h>
-#include <momemta/Path.h>
+namespace graph2 {
 
-namespace graph {
+// Graph definitions
 
-class unresolved_input: public std::runtime_error {
-    using std::runtime_error::runtime_error;
+struct Vertex {
+    uint32_t id;
+    std::string name; // Unique name of the module
+    std::string type; // Module type
+    momemta::ModuleList::value_type def;
 };
 
-class incomplete_looper_path: public std::runtime_error {
-    using std::runtime_error::runtime_error;
+struct Edge {
+    std::string description;
+    bool virt;
 };
+
+typedef boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, Vertex, Edge> Graph;
+
+typedef boost::graph_traits<Graph>::vertex_descriptor vertex_t;
+typedef boost::graph_traits<Graph>::edge_descriptor edge_t;
+typedef boost::graph_traits<Graph>::out_edge_iterator out_edge_iterator_t;
+typedef boost::graph_traits<Graph>::in_edge_iterator in_edge_iterator_t;
+
+class vertex_writer {
+public:
+    vertex_writer(Graph g) : graph(g) {}
+
+    template <class VertexOrEdge>
+    void operator()(std::ostream& out, const VertexOrEdge& v) const {
+        std::string shape = "ellipse";
+        std::string color = "black";
+        std::string style = "solid";
+
+        if (graph[v].def.internal) {
+            shape = "rectangle";
+            color = "black";
+            style = "dashed";
+        }
+
+        out << "[shape=\"" << shape << "\",color=\"" << color << "\",style=\"" << style
+            << "\",label=\"" << graph[v].name << "\"]";
+    }
+private:
+    Graph graph;
+};
+
+class edge_writer {
+public:
+    edge_writer(Graph g) : graph(g) {}
+
+    template <class VertexOrEdge>
+    void operator()(std::ostream& out, const VertexOrEdge& e) const {
+        std::string color = "black";
+        std::string style = "solid";
+
+        if (graph[e].virt) {
+            style = "invis";
+        }
+
+        out << "[color=\"" << color << "\",style=\"" << style
+            << "\",label=\"" << graph[e].description << "\"]";
+    }
+private:
+    Graph graph;
+};
+
+void graphviz_export(const Graph& g, const std::string& filename) {
+
+    std::ofstream f(filename.c_str());
+
+    //auto vertices_name = boost::get(&Vertex::name, g);
+    //auto edges_name = boost::get(&Edge::description, g);
+
+    boost::write_graphviz(f, g, vertex_writer(g), edge_writer(g), boost::default_writer(), boost::get(&Vertex::id, g));
+}
+
 
 bool isConnectedToByOut(Graph& g, vertex_t vertex, vertex_t to) {
     out_edge_iterator_t o, o_end;
@@ -54,94 +138,89 @@ bool isConnectedTo(Graph& g, vertex_t vertex, vertex_t to) {
     if (isConnectedToByOut(g, vertex, to))
         return true;
 
-    if (isConnectedToByIn(g, vertex, to))
-        return true;
-
-    return false;
+    return isConnectedToByIn(g, vertex, to);
 }
 
-bool checkInPath(Graph& g, vertex_t looper, vertex_t module) {
+void sort_modules(const momemta::ModuleList& available_modules,
+                  const std::vector<Configuration::ModuleDecl>& requested_modules,
+                  const std::vector<ExecutionPath*>& execution_paths,
+                  SortedModuleList& modules) {
 
-    // We know that the module is a Looper
-    // grab its execution path from its configuration
-    const auto& looper_path = g[looper].configuration_module.parameters->get<Path>("path");
-    const auto& path_modules = looper_path.modules();
-
-    const auto& target = g[module];
-
-    auto it = std::find_if(path_modules.begin(), path_modules.end(), [&target](const ModulePtr& m) {
-        return m->name() == target.name;
-    });
-
-    return it != path_modules.end();
-}
-
-Graph build(const Pool::DescriptionMap& description, std::vector<ModulePtr>& modules, const std::vector<PathElementsPtr>& paths, std::function<void(const std::string&)> on_module_removed) {
 
     Graph g;
-
     uint32_t id = 0;
+
+    auto get_module_def = [&available_modules](const std::string& module_type) {
+
+        auto it = std::find_if(available_modules.begin(), available_modules.end(),
+                               [&module_type](const momemta::ModuleList::value_type& m) {
+                                   return m.name == module_type;
+                               });
+
+        assert(it != available_modules.end());
+        return *it;
+    };
+
+    // Keep a map of all the vertices for easy access
     std::unordered_map<std::string, vertex_t> vertices;
 
-    // Create vertices. Each vertex is a module
-    // If a module is part of a Path, then it's not added to the main graph, but
-    // into a subgraph.
-    for (const auto& d: description) {
+    // Create graph vertices. Each vertex is a module requested in the configuration file
+    for (const auto& module: requested_modules) {
         vertex_t v = boost::add_vertex(g);
-        vertices.emplace(d.first, v);
 
-        g[v].name = d.first;
-        g[v].configuration_module = d.second.module;
-        g[v].id = id;
-        auto module = std::find_if(modules.begin(), modules.end(), [&d](const ModulePtr& m) { return m->name() == d.first; });
-        if (module != modules.end())
-            g[v].module = *module;
+        auto& vertex = g[v];
+        vertex.id = id++;
+        vertex.name = module.name;
+        vertex.type = module.type;
 
-        PathElementsPtr path = nullptr;
-        auto path_it = std::find_if(paths.begin(), paths.end(), [&d](const PathElementsPtr path) {
-            auto it = std::find_if(path->elements.begin(), path->elements.end(), [&d](const std::string& name) { return name == d.first; });
-            return it != path->elements.end();
-        });
+        // Attach module definition to the vertex
+        vertex.def = get_module_def(module.type);
 
-        if (path_it != paths.end())
-            path = *path_it;
-
-        if (path) {
-            assert(!path->resolved);
-        }
-
-        // If null, it means the modules belong to the main path
-        g[v].path = path;
-
-        id++;
+        vertices.emplace(module.name, v);
     }
 
-    modules.clear();
-    for (auto& path: paths) {
-        path->modules.clear();
-    }
+    // Create edges, connecting modules together. An edge link module's outputs to module's inputs
+    typename boost::graph_traits<Graph>::vertex_iterator vtx_it, vtx_it_end;
+    for (std::tie(vtx_it, vtx_it_end) = boost::vertices(g); vtx_it != vtx_it_end; vtx_it++) {
 
-    // Create edges. One edge connect one module output to one module input
-    for (const auto& vertex: vertices) {
-        const auto& outputs = description.at(vertex.first).outputs;
+        const auto& vertex = g[*vtx_it];
 
-        // Find all modules having for input this output
-        for (const auto& output: outputs) {
+        // Connect each output of this module to any module needing it
+        for (const auto& output: vertex.def.outputs) {
 
-            for (const auto& module: description) {
-                // Skip ourself
-                if (module.first == vertex.first)
+            // Find any module using this output
+            for (const auto& module: requested_modules) {
+
+                // Skip ourselves
+                if (module.name == vertex.name)
                     continue;
 
-                for (const auto& input: module.second.inputs) {
-                    if ((input.module == vertex.first) && (input.parameter == output)) {
-                        edge_t e;
-                        bool inserted;
-                        std::tie(e, inserted) = boost::add_edge(vertex.second, vertices.at(module.first), g);
-                        g[e].name = input.parameter;
-                        g[e].description = input.parameter;
-                        if (input.isIndexed()) {
-                            g[e].description += "[" + std::to_string(input.index) + "]";
+                // Get definition of this new module
+                const auto& input_module_def = get_module_def(module.type);
+                for (const auto& input: input_module_def.inputs) {
+                    // Grab the InputTag for each input, and see if it points to the vertex
+                    momemta::gtl::optional<std::vector<InputTag>> inputTags =
+                            momemta::getInputTagsForInput(input, *module.parameters);
+
+                    // If the input is optional, we may not have anything
+                    if (! inputTags)
+                        continue;
+
+                    for (const auto& inputTag: *inputTags) {
+                        if (vertex.name == inputTag.module && output.name == inputTag.parameter) {
+                            // We have a match, the InputTag points to the vertex output
+                            // Create a new edge in the graph
+
+                            edge_t e;
+                            bool inserted;
+                            std::tie(e, inserted) = boost::add_edge(*vtx_it, vertices.at(module.name), g);
+
+                            auto& edge = g[e];
+                            edge.virt = false;
+                            edge.description = inputTag.parameter;
+                            if (inputTag.isIndexed()) {
+                                edge.description += "[" + std::to_string(inputTag.index) + "]";
+                            }
                         }
                     }
                 }
@@ -149,58 +228,39 @@ Graph build(const Pool::DescriptionMap& description, std::vector<ModulePtr>& mod
         }
     }
 
-    // Find any module whose output is not used by any module. It's useless, so remove it
-    // Only allowed module in this situation is virtual modules, or modules whose leafModule() method returns true.
+    // Modules are connected together. Find all vertices not connected to anything and remove them
     for (auto it = vertices.begin(), ite = vertices.end(); it != ite;) {
         if (boost::out_degree(it->second, g) == 0) {
 
-            if (Module::is_virtual_module(it->first) || (g[it->second].module && g[it->second].module->leafModule())) {
+            auto& vertex = g[it->second];
+
+            // Don't consider internal modules
+            if (vertex.def.internal) {
                 ++it;
                 continue;
             }
 
-            on_module_removed(it->first);
+            // Check in the definition if this module has any output
+            // If not, we keep it.
+            if (vertex.def.outputs.empty()) {
+                ++it;
+                continue;
+            }
+
+            // Otherwise, remove it
             LOG(info) << "Module '" << it->first << "' output is not used by any other module. Removing it from the configuration.";
             boost::clear_vertex(it->second, g);
             boost::remove_vertex(it->second, g);
+
             it = vertices.erase(it);
         } else
             ++it;
     }
 
-    auto log_and_throw_unresolved_input = [](const std::string& module_name, const InputTag& input) {
-        LOG(fatal) << "Module '" << module_name << "' requested a non-existing input (" << input.toString() << ")";
-        throw unresolved_input("Module '" + module_name + "' requested a non-existing input (" + input.toString() + ")");
-    };
-
-    // Find any module whose input point to a non-existing module / parameter
-    for (const auto& vertex: vertices) {
-        const auto& inputs = description.at(vertex.first).inputs;
-
-        for (const auto& input: inputs) {
-            auto it = vertices.find(input.module);
-            if (it == vertices.end()) {
-                // Non-existing module
-                log_and_throw_unresolved_input(vertex.first, input);
-            }
-
-            // Look for input in module's output
-            const auto& target_module_output = description.at(it->first).outputs;
-            auto it_input = std::find_if(target_module_output.begin(), target_module_output.end(), [&input](const std::string& output) {
-                    return input.parameter == output;
-                    });
-
-            if (it_input == target_module_output.end()) {
-                // Non-existing parameter
-                log_and_throw_unresolved_input(vertex.first, input);
-            }
-        }
-    }
-
     // We need to make sure that any dependencies of a module inside a looper
     // is ran before the looper itself.
     for (const auto& vertex: vertices) {
-        if (g[vertex.second].configuration_module.type == "Looper") {
+        if (g[vertex.second].type == "Looper") {
 
             out_edge_iterator_t e, e_end;
             std::tie(e, e_end) = boost::out_edges(vertex.second, g);
@@ -221,138 +281,88 @@ Graph build(const Pool::DescriptionMap& description, std::vector<ModulePtr>& mod
 
                     // Check if the source vertex is connected to the looper in any way
                     if (!isConnectedTo(g, source, vertex.second)) {
-                        boost::add_edge(source, vertex.second, g);
+                        edge_t e;
+                        bool inserted;
+                        std::tie(e, inserted) = boost::add_edge(source, vertex.second, g);
+                        g[e].description = "virtual link";
+                        g[e].virt = true;
                     }
                 }
             }
         }
     }
 
-    // Re-assign each vertex a continuous id
+    // Ensure ids are continuous
     id = 0;
-    typename boost::graph_traits<Graph>::vertex_iterator it_i, it_end;
-    for (std::tie(it_i, it_end) = boost::vertices(g); it_i != it_end; it_i++) {
-        g[*it_i].id = id++;
+    for (std::tie(vtx_it, vtx_it_end) = boost::vertices(g); vtx_it != vtx_it_end; vtx_it++) {
+        g[*vtx_it].id = id++;
     }
 
     // Sort graph
     std::list<vertex_t> sorted_vertices;
     try {
-        boost::topological_sort(g, std::front_inserter(sorted_vertices), boost::vertex_index_map(boost::get(&graph::Vertex::id, g)));
+        boost::topological_sort(g, std::front_inserter(sorted_vertices),
+                                boost::vertex_index_map(boost::get(&Vertex::id, g)));
     } catch (...) {
         graphviz_export(g, "graph.debug");
         LOG(fatal) << "Exception while sorting the graph. Graphviz representation saved as graph.debug";
         throw;
     }
 
-
-    // Remove virtual vertices
+    // Remove vertices corresponding to internal modules
     sorted_vertices.erase(std::remove_if(sorted_vertices.begin(), sorted_vertices.end(),
-                [&g](const vertex_t& vertex) {
-                    return Module::is_virtual_module(g[vertex].name) || !g[vertex].module;
-                }), sorted_vertices.end());
+                                         [&g](const vertex_t& vertex) -> bool {
+                                             return g[vertex].def.internal;
+                                         }), sorted_vertices.end());
 
     for (const auto vertex: sorted_vertices) {
-        LOG(info) << "[Graph] Running " << g[vertex].name;
+        LOG(info) << "[Graph2] Running " << g[vertex].name;
     }
 
-    // Re-fill modules vector with new content (sorted & cleaned)
-    for (const auto& vertex: sorted_vertices) {
-        assert(g[vertex].module);
+    graphviz_export(g, "graph2.dot");
 
-        PathElementsPtr path = g[vertex].path;
-        if (path) {
-            path->modules.push_back(g[vertex].module);
-        } else {
-            modules.push_back(g[vertex].module);
-        }
-    }
+    for (auto vertex: sorted_vertices) {
+        auto it = std::find_if(requested_modules.begin(), requested_modules.end(),
+                               [&vertex, &g](const Configuration::ModuleDecl& module) -> bool {
+                                   return module.name == g[vertex].name;
+                               });
 
-    for (auto& path: paths) {
-        // This path can't change anymore, so it's safe to freeze it
-        path->resolved = true;
+        assert(it != requested_modules.end());
 
-        for (const auto& name: path->elements) {
-            auto it = std::find_if(path->modules.begin(), path->modules.end(), [&name](const ModulePtr& module) { return module->name() == name; });
-            if (it == path->modules.end()) {
-                LOG(warning) << "Module '" << name << "' in path not found.";
-            }
-        }
-    }
+        // Find in which execution path this module is. If it's not found inside any execution path
+        // declared in the configuration, then the module is assigned to the default execution path.
+
+        static auto find_module_in_path = [&vertex, &g](const ExecutionPath* p) -> bool {
+            // Returns true if the module is inside the execution path `p`, False otherwise
+            auto it = std::find_if(p->elements.begin(), p->elements.end(),
+                                   [&vertex, &g](const std::string& element) -> bool {
+                                       return g[vertex].name == element;
+                                   }
+            );
+
+            return it != p->elements.end();
+        };
 
 
-    // Check for if a module use a Looper output but is not actually declared in the looper path
-    std::map<vertex_t, std::vector<vertex_t>> modules_not_in_path;
-    for (const auto& vertex: sorted_vertices) {
-        if (g[vertex].configuration_module.type == "Looper") {
-            out_edge_iterator_t e, e_end;
-            std::tie(e, e_end) = boost::out_edges(vertex, g);
+        auto execution_path_it = std::find_if(execution_paths.begin(), execution_paths.end(), find_module_in_path);
+        auto execution_path = execution_path_it == execution_paths.end() ? DEFAULT_EXECUTION_PATH :
+                              (*execution_path_it)->id;
 
-            // Iterator over all edges connected to this Looper vertex
-            for (; e != e_end; ++e) {
-                auto target = boost::target(*e, g);
+        auto insert_it = std::find_if(modules.begin(), modules.end(),
+                                    [&execution_path](const SortedModuleList::value_type& p) {
+                                        return p.first == execution_path;
+                                    });
 
-                // Check if target is inside the looper path
-                if (! checkInPath(g, vertex, target)) {
-                    auto& loopers = modules_not_in_path[target];
-                    auto it = std::find(loopers.begin(), loopers.end(), vertex);
-                    if (it == loopers.end())
-                        loopers.push_back(vertex);
-                } else {
-                    modules_not_in_path.erase(target);
-                }
-            }
-        }
-    }
-
-    if (modules_not_in_path.size() != 0) {
-        // Only print a message for the first module not in path
-        auto it = modules_not_in_path.begin();
-
-        auto target = g[it->first];
-
-        std::stringstream loopers;
-        for (size_t i = 0; i < it->second.size(); i++) {
-            loopers << "'" << g[it->second[i]].name << "'";
-            if (i != it->second.size() - 1)
-                loopers << ", ";
+        if (insert_it == modules.end()) {
+            // The execution path does not yet exist, insert it
+            modules.emplace_back(std::make_pair(execution_path, std::vector<Configuration::ModuleDecl>()));
+            insert_it = std::prev(modules.end());
         }
 
-        std::string plural = it->second.size() ? "s" : "";
-        std::string one_of_the = it->second.size() ? "one of the" : "the";
+        assert(insert_it != modules.end());
 
-        LOG(fatal) << "Module '" << target.name << "' is configured to use Looper " << loopers.str()
-            << " output" << plural << ", but is not actually part of the Looper" << plural << " execution path. This will lead to undefined "
-            << "behavior. You can fix the issue by adding the module '"
-            << target.name
-            << "' to " << one_of_the << " Looper" << plural << " execution path";
-
-        throw incomplete_looper_path("A module is using the looper output but not actually part of its "
-                "execution path");
+        insert_it->second.push_back(*it);
     }
-
-    graphviz_export(g, "graph1.dot");
-    return g;
 }
 
-class edge_writer {
-    public:
-        edge_writer(Graph g) : graph(g) {}
-        template <class VertexOrEdge>
-            void operator()(std::ostream& out, const VertexOrEdge& v) const {
-                out << "[label=\"" << graph[v].name << "\"]";
-            }
-    private:
-        Graph graph;
-};
-
-void graphviz_export(const Graph& g, const std::string& filename) {
-
-    std::ofstream f(filename.c_str());
-
-    auto vertices_name = boost::get(&Vertex::name, g);
-    auto edges_name = boost::get(&Edge::description, g);
-
-    boost::write_graphviz(f, g, make_label_writer(vertices_name), make_label_writer(edges_name), boost::default_writer(), boost::get(&Vertex::id, g));
-}
 }
