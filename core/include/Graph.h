@@ -10,7 +10,7 @@
 #include <vector>
 
 /// Generic graph representation of the module hierarchy
-namespace graph2 {
+namespace graph {
 
 /**
  * \brief Sort the list of modules declared in the configuration according to their dependencies.
@@ -37,18 +37,5 @@ void sort_modules(
         const std::vector<ExecutionPath*>& execution_paths,
         SortedModuleList& modules
 );
-
-/**
- * \brief Export a given graph in `dot` format
- *
- * \note To produce a PDF, run the following command
- * ```
- * dot -Tpdf filename.dot -o filename.pdf
- * ```
- *
- * \param g The graph to export
- * \param filename The output filename
- */
-//void graphviz_export(const Graph& g, const std::string& filename);
 
 }

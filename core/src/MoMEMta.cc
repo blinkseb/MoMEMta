@@ -96,8 +96,8 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     insert_internal_module("_momemta", "momemta", pset);
 
     // All modules are correctly declared. Create a sorted list of modules to execute.
-    graph2::SortedModuleList modules_to_execute;
-    graph2::sort_modules(available_modules, module_instances_def, configuration.getPaths(), modules_to_execute);
+    graph::SortedModuleList modules_to_execute;
+    graph::sort_modules(available_modules, module_instances_def, configuration.getPaths(), modules_to_execute);
 
     // We now have a sorted list of module declaration, split into the different execution path
     // We can now create a new instance of each module in the correct order. For that, we loop over the list of

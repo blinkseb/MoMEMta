@@ -25,7 +25,7 @@
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/topological_sort.hpp>
 
-namespace graph2 {
+namespace graph {
 
 // Graph definitions
 
@@ -319,7 +319,7 @@ void sort_modules(const momemta::ModuleList& available_modules,
         LOG(info) << "[Graph2] Running " << g[vertex].name;
     }
 
-    graphviz_export(g, "graph2.dot");
+    graphviz_export(g, "graph.dot");
 
     for (auto vertex: sorted_vertices) {
         auto it = std::find_if(requested_modules.begin(), requested_modules.end(),
