@@ -94,10 +94,6 @@ private:
 void graphviz_export(const Graph& g, const std::string& filename) {
 
     std::ofstream f(filename.c_str());
-
-    //auto vertices_name = boost::get(&Vertex::name, g);
-    //auto edges_name = boost::get(&Edge::description, g);
-
     boost::write_graphviz(f, g, vertex_writer(g), edge_writer(g), boost::default_writer(), boost::get(&Vertex::id, g));
 }
 
@@ -314,12 +310,6 @@ void sort_modules(const momemta::ModuleList& available_modules,
                                          [&g](const vertex_t& vertex) -> bool {
                                              return g[vertex].def.internal;
                                          }), sorted_vertices.end());
-
-    for (const auto vertex: sorted_vertices) {
-        LOG(info) << "[Graph2] Running " << g[vertex].name;
-    }
-
-    graphviz_export(g, "graph.dot");
 
     for (auto vertex: sorted_vertices) {
         auto it = std::find_if(requested_modules.begin(), requested_modules.end(),
