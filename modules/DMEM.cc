@@ -88,4 +88,5 @@ REGISTER_MODULE(DMEM)
         .Output("hist")
         .Attr("x_start:double")
         .Attr("x_end:double")
-        .Attr("n_bins:int");
+        .Attr("n_bins:int")
+        .IsSticky();
