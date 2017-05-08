@@ -37,10 +37,6 @@ class Constant: public Module {
             *constant = value;
         };
 
-        virtual bool leafModule() const override {
-            return true;
-        }
-
     private:
         T value;
 

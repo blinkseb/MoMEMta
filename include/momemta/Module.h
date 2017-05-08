@@ -120,24 +120,6 @@ class Module {
          */
         virtual void finish() { };
 
-        /**
-         * \brief Check if module produces an output or not
-         *
-         * If a module produces no output, or if its output is not used as input by any other module,
-         * it is by default removed from the list of modules that are called on each phase-space point.
-         *
-         * This function allows to flag the module so that it doesn't get removed. A typical use case would
-         * be a module that only produces an object that is retrieved directly from the Pool by the user,
-         * after the integration.
-         *
-         * \return True if the module produces no output, False otherwise.
-         *
-         * \note Default value is False;
-         */
-        virtual bool leafModule() const {
-            return false;
-        }
-
         virtual std::string name() const final {
             return m_name;
         }

@@ -63,10 +63,6 @@ class DMEM: public Module {
             return Status::OK;
         }
 
-        virtual bool leafModule() const override {
-            return true;
-        }
-
     private:
 
         double x_start, x_end;

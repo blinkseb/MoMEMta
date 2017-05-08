@@ -45,10 +45,6 @@ class Printer: public Module {
             return Status::OK;
         }
 
-        virtual bool leafModule() const override {
-            return true;
-        }
-
     private:
         std::string name;
 
@@ -83,10 +79,6 @@ class Printer<std::vector<T>>: public Module {
             LOG(info) << str.str() << "}";
 
             return Status::OK;
-        }
-
-        virtual bool leafModule() const override {
-            return true;
         }
 
     private:
