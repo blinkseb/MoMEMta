@@ -83,7 +83,7 @@ ConfigurationReader::ConfigurationReader(const std::string& file, const Paramete
 }
 
 void ConfigurationReader::onModuleDeclared(const std::string& type, const std::string& name) {
-    Configuration::Module module;
+    Configuration::ModuleDecl module;
     module.name = name;
     module.type = type;
 

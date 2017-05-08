@@ -48,7 +48,7 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     momemta::ModuleRegistry::get().exportList(false, available_modules);
 
     // List of module instances defined by the user, with their parameters
-    std::vector<Configuration::Module> module_instances_def = configuration.getModules();
+    std::vector<Configuration::ModuleDecl> module_instances_def = configuration.getModules();
 
     // First, validate the parameters of each module instance, ensure they fulfill the module definition
     bool all_parameters_valid = true;
@@ -66,7 +66,7 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     // Insert internal modules (cuba, MoMEMta, inputs, ...) into the requested list.
     auto insert_internal_module = [&module_instances_def](const std::string& type, const std::string& name,
                                                           const ParameterSet& parameters) {
-        Configuration::Module internal_module;
+        Configuration::ModuleDecl internal_module;
         internal_module.type = type;
         internal_module.name = name;
         internal_module.parameters = std::make_shared<ParameterSet>(parameters);
@@ -97,7 +97,7 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     insert_internal_module("_momemta", "momemta", pset);
 
     // All modules are correctly declared. Create a sorted list of modules to execute.
-    std::vector<Configuration::Module> modules_to_execute;
+    std::vector<Configuration::ModuleDecl> modules_to_execute;
     graph2::sort_modules(available_modules, module_instances_def, modules_to_execute);
 
 

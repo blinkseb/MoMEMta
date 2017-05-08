@@ -16,7 +16,7 @@ namespace graph {
 
 struct Vertex {
     std::string name;
-    Configuration::Module configuration_module;
+    Configuration::ModuleDecl configuration_module;
     ModulePtr module;
     uint32_t id;
     PathElements* path;

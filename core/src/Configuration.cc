@@ -21,7 +21,7 @@
 #include <momemta/Path.h>
 #include <momemta/ParameterSet.h>
 
-Configuration::Module::Module(const Configuration::Module& other) {
+Configuration::ModuleDecl::ModuleDecl(const Configuration::ModuleDecl& other) {
     name = other.name;
     type = other.type;
 
@@ -29,13 +29,13 @@ Configuration::Module::Module(const Configuration::Module& other) {
         parameters.reset(other.parameters->clone());
 }
 
-Configuration::Module::Module(const Configuration::Module&& other) {
+Configuration::ModuleDecl::ModuleDecl(const Configuration::ModuleDecl&& other) {
     name = std::move(other.name);
     type = std::move(other.type);
     parameters = std::move(other.parameters);
 }
 
-Configuration::Module& Configuration::Module::operator=(Configuration::Module other) {
+Configuration::ModuleDecl& Configuration::ModuleDecl::operator=(Configuration::ModuleDecl other) {
     std::swap(name, other.name);
     std::swap(type, other.type);
     std::swap(parameters, other.parameters);
@@ -70,7 +70,7 @@ Configuration& Configuration::operator=(Configuration other) {
     return *this;
 }
 
-const std::vector<Configuration::Module>& Configuration::getModules() const {
+const std::vector<Configuration::ModuleDecl>& Configuration::getModules() const {
     return modules;
 }
 

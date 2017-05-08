@@ -26,8 +26,8 @@ namespace graph2 {
  */
 void sort_modules(
         const momemta::ModuleList& available_modules,
-        const std::vector<Configuration::Module>& requested_modules,
-        std::vector<Configuration::Module>& modules
+        const std::vector<Configuration::ModuleDecl>& requested_modules,
+        std::vector<Configuration::ModuleDecl>& modules
 );
 
 /**

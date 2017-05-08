@@ -74,12 +74,12 @@ bool Pool::exists(const InputTag& tag) const {
     return it != m_storage.end();
 }
 
-void Pool::current_module(const Configuration::Module& module) {
+void Pool::current_module(const Configuration::ModuleDecl& module) {
     m_current_module = module;
 }
 
 void Pool::current_module(const std::string& name) {
-    Configuration::Module module;
+    Configuration::ModuleDecl module;
     module.name = name;
     module.type = "@" + name;
 

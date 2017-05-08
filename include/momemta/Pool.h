@@ -40,7 +40,7 @@ struct PoolContent {
 
 // FIXME: Use a more descriptive name, like "ModuleDependencies"
 struct Description {
-    Configuration::Module module;
+    Configuration::ModuleDecl module;
     std::vector<InputTag> inputs;
     std::vector<std::string> outputs;
 };
@@ -112,7 +112,7 @@ class Pool {
          *
          * \param module The module beeing created
          */
-        virtual void current_module(const Configuration::Module& module) final;
+        virtual void current_module(const Configuration::ModuleDecl& module) final;
 
         /**
          * \brief Inform the pool of which module is currently created.
@@ -158,7 +158,7 @@ private:
         Pool(const Pool&) = delete;
         Pool& operator=(const Pool&) = delete;
 
-        Configuration::Module m_current_module; /// Module currently created.
+        Configuration::ModuleDecl m_current_module; /// Module currently created.
         bool m_frozen = false; /// If true, no modification of the pool is allowed
 
         mutable PoolStorage m_storage;

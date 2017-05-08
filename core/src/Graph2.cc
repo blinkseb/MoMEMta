@@ -142,8 +142,8 @@ bool isConnectedTo(Graph& g, vertex_t vertex, vertex_t to) {
 }
 
 void sort_modules(const momemta::ModuleList& available_modules,
-                  const std::vector<Configuration::Module>& requested_modules,
-                  std::vector<Configuration::Module>& modules) {
+                  const std::vector<Configuration::ModuleDecl>& requested_modules,
+                  std::vector<Configuration::ModuleDecl>& modules) {
 
 
     Graph g;
@@ -322,7 +322,7 @@ void sort_modules(const momemta::ModuleList& available_modules,
 
     for (auto vertex: sorted_vertices) {
         auto it = std::find_if(requested_modules.begin(), requested_modules.end(),
-                               [&vertex, &g](const Configuration::Module& module) -> bool {
+                               [&vertex, &g](const Configuration::ModuleDecl& module) -> bool {
                                    return module.name == g[vertex].name;
                                });
 
