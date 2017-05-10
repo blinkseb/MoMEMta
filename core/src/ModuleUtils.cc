@@ -42,28 +42,13 @@ const ParameterSet *findPSet(const momemta::ArgDef& input_def, const ParameterSe
 }
 }
 
-bool momemta::validateModuleParameters(const ParameterSet& parameters, const ModuleList& available_modules) {
-
-    // Get module definition
-    auto it = std::find_if(available_modules.begin(), available_modules.end(),
-                           [&parameters](const ModuleList::value_type& available_module) {
-                               // The *name* of the module inside the registry is what we call the
-                               // *type* in userland.
-                               return available_module.name == parameters.getModuleType();
-                           });
-
-    if (it == available_modules.end())
-        throw std::runtime_error("A module was declared with a type unknown to the registry. This is not supposed to "
-                                         "be possible");
-
-    const auto& module_def = *it;
+bool momemta::validateModuleParameters(const ModuleList::value_type& module_def, const ParameterSet& parameters) {
 
     std::vector<std::string> errors;
     std::vector<std::string> warnings;
 
     // Check that all attributes are defined
     // TODO: We can imagine here validating also the type of the attribute
-    // TODO: Add support for optional attributes
     for (const auto& attr_def: module_def.attributes) {
 
         // Ignore global or optional attributes
@@ -89,8 +74,8 @@ bool momemta::validateModuleParameters(const ParameterSet& parameters, const Mod
             if (pset->existsAs<ParameterSet>(nested_attribute.name))
                 pset = &pset->get<ParameterSet>(nested_attribute.name);
             else {
-                // FIXME: Handle error
-                LOG(error) << "Attribute " << nested_attribute.name << " not found in PSet " << pset->getModuleType() << "::" << pset->getModuleName();
+                LOG(error) << "Attribute " << nested_attribute.name << " not found in PSet "
+                           << pset->getModuleType() << "::" << pset->getModuleName();
                 pset = nullptr;
                 break;
             }
@@ -134,7 +119,8 @@ bool momemta::validateModuleParameters(const ParameterSet& parameters, const Mod
     return errors.empty();
 }
 
-momemta::gtl::optional<std::vector<InputTag>> momemta::getInputTagsForInput(const ArgDef& input, const ParameterSet& parameters) {
+momemta::gtl::optional<std::vector<InputTag>> momemta::getInputTagsForInput(const ArgDef& input,
+                                                                            const ParameterSet& parameters) {
 
     const ParameterSet* pset = findPSet(input, parameters);
     assert(pset || input.optional);

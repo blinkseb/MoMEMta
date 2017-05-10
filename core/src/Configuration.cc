@@ -110,5 +110,33 @@ Configuration Configuration::freeze() const {
         module.parameters->setGlobalParameters(*c.global_parameters);
     }
 
+    // Insert internal modules inside the list of modules
+    // See the full list of internal modules in modules/InternalModules.cc
+
+    auto insert_internal_module = [&c](const std::string& type,
+                                       const std::string& name,
+                                       const ParameterSet& parameters) {
+        Configuration::ModuleDecl internal_module;
+        internal_module.type = type;
+        internal_module.name = name;
+        internal_module.parameters = std::make_shared<ParameterSet>(parameters);
+
+        c.modules.push_back(internal_module);
+    };
+
+    insert_internal_module("_met", "met", ParameterSet());
+    insert_internal_module("_cuba", "cuba", ParameterSet());
+
+    auto inputs = c.getInputs();
+    for (const auto& input: inputs) {
+        insert_internal_module("_input", input, ParameterSet());
+    }
+
+    // Insert the MoMEMta module, fetching the integrands
+    std::vector<InputTag> integrands = c.getIntegrands();
+    ParameterSet pset;
+    pset.set("integrands", integrands);
+    insert_internal_module("_momemta", "momemta", pset);
+
     return c;
 }

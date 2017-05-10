@@ -40,6 +40,49 @@ using namespace std::chrono;
 #define CUBA_ABORT -999
 #define CUBA_OK 0
 
+/**
+ * Validate all modules declaration against their definitions
+ * \param module_decls
+ * \param available_modules
+ */
+void validateModules(const std::vector<Configuration::ModuleDecl>& module_decls,
+                     const momemta::ModuleList& available_modules) {
+
+    bool all_parameters_valid = true;
+
+    for (const auto& decl: module_decls) {
+        // Find module inside the registry
+        auto it = std::find_if(available_modules.begin(), available_modules.end(),
+                               [&decl](const momemta::ModuleList::value_type& available_module) {
+                                   // The *name* of the module inside the registry is what we call the
+                                   // *type* in userland.
+                                   return available_module.name == decl.type;
+                               });
+
+        if (it == available_modules.end())
+            throw std::runtime_error("A module was declared with a type unknown to the registry. This is not supposed to "
+                                             "be possible");
+
+        const auto& def = *it;
+
+        // Ignore internal modules
+        if (def.internal)
+            continue;
+
+        all_parameters_valid &= momemta::validateModuleParameters(def, *decl.parameters);
+    }
+
+    if (! all_parameters_valid) {
+        // At least one set of parameters is invalid. Stop here
+        auto exception = lua::invalid_configuration_file("Validation of modules' parameters failed. "
+                "Check the log output for more details on how to fix your configuration file.");
+
+        LOG(fatal) << exception.what();
+
+        throw exception;
+    }
+}
+
 MoMEMta::MoMEMta(const Configuration& configuration) {
 
     // List of all available type of modules with their definition
@@ -49,40 +92,11 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     // List of module instances defined by the user, with their parameters
     std::vector<Configuration::ModuleDecl> module_instances_def = configuration.getModules();
 
-    // First, validate the parameters of each module instance, ensure they fulfill the module definition
-    bool all_parameters_valid = true;
-    for (const auto& instance_def: module_instances_def)
-        all_parameters_valid &= momemta::validateModuleParameters(*instance_def.parameters, available_modules);
+    validateModules(
+            module_instances_def,
+            available_modules
+    );
 
-    if (! all_parameters_valid) {
-        // At least one set of parameters is invalid. Stop here
-        auto exception = lua::invalid_configuration_file("Validation of modules' parameters failed. "
-                "Check the log output for more details on how to fix your configuration file.");
-        LOG(fatal) << exception.what();
-
-        throw exception;
-    }
-
-    // Insert internal modules (cuba, MoMEMta, inputs, ...) into the requested list.
-    auto insert_internal_module = [&module_instances_def](const std::string& type, const std::string& name,
-                                                          const ParameterSet& parameters) {
-        Configuration::ModuleDecl internal_module;
-        internal_module.type = type;
-        internal_module.name = name;
-        internal_module.parameters = std::make_shared<ParameterSet>(parameters);
-
-        module_instances_def.push_back(internal_module);
-    };
-
-    insert_internal_module("_met", "met", ParameterSet());
-    insert_internal_module("_cuba", "cuba", ParameterSet());
-
-    auto inputs = configuration.getInputs();
-    for (const auto& input: inputs) {
-        insert_internal_module("_input", input, ParameterSet());
-    }
-
-    // Integrand
     // Check if the user defined which integrand to use
     std::vector<InputTag> integrands = configuration.getIntegrands();
     if (!integrands.size()) {
@@ -90,11 +104,6 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
             << "No integrand found. Define which module's output you want to use as the integrand using the lua `integrand` function.";
         throw integrands_output_error("No integrand found");
     }
-
-    // Insert the MoMEMta module, fetching the integrands
-    ParameterSet pset;
-    pset.set("integrands", integrands);
-    insert_internal_module("_momemta", "momemta", pset);
 
     // All modules are correctly declared. Create a sorted list of modules to execute.
     graph::SortedModuleList modules_to_execute;
@@ -108,6 +117,7 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     m_ps_weight = m_pool->put<double>({"cuba", "ps_weight"});
 
     // For each input declared in the configuration, create pool entries for p4 and type
+    auto inputs = configuration.getInputs();
     for (const auto& input: inputs) {
         LOG(debug) << "Input declared: " << input;
         m_inputs_p4.emplace(input, m_pool->put<LorentzVector>({input, "p4"}));

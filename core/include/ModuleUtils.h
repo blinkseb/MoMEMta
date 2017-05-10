@@ -25,7 +25,14 @@
 
 namespace momemta {
 
-bool validateModuleParameters(const ParameterSet& parameters, const ModuleList& available_modules);
+/**
+ * \brief Validates parameters against a module definition
+ *
+ * \param module_def Definition of the module
+ * \param parameters Parameters to validate
+ * \return True if the parameters match the definition, false otherwise
+ */
+bool validateModuleParameters(const ModuleList::value_type& module_def, const ParameterSet& parameters);
 
 /**
  * Return the list of InputTag associated with a given input, if it exists
