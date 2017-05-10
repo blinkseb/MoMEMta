@@ -159,6 +159,7 @@ set(MOMEMTA_SOURCES
     "modules/BlockE.cc"
     "modules/BlockF.cc"
     "modules/BlockG.cc"
+    "modules/InternalModules.cc"
     "modules/SecondaryBlockA.cc"
     "modules/SecondaryBlockB.cc"
     "modules/SecondaryBlockCD.cc"

@@ -28,27 +28,7 @@ ModuleRegistry& ModuleRegistry::get() {
     return s_instance;
 }
 
-ModuleRegistry::ModuleRegistry() {
-
-    // Register internal modules
-    auto builder = registration::ModuleDefBuilder("_cuba")
-        .Output("ps_points")
-        .Output("ps_weight");
-    registerModule([builder]() { return builder.Build(); });
-
-    builder = registration::ModuleDefBuilder("_met")
-        .Output("p4");
-    registerModule([builder]() { return builder.Build(); });
-
-    builder = registration::ModuleDefBuilder("_input")
-        .Output("p4")
-        .Output("type");
-    registerModule([builder]() { return builder.Build(); });
-
-    builder = registration::ModuleDefBuilder("_momemta")
-        .Inputs("integrands");
-    registerModule([builder]() { return builder.Build(); });
-}
+ModuleRegistry::ModuleRegistry() { }
 
 void ModuleRegistry::registerModule(RegisterOp registration_op) {
     std::unique_lock<std::mutex> lock(mutex_);
