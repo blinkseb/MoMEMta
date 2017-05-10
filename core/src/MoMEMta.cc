@@ -104,20 +104,17 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     m_pool.reset(new Pool());
 
     // Create phase-space points vector, input for many modules
-    m_pool->current_module("cuba");
     m_ps_points = m_pool->put<std::vector<double>>({"cuba", "ps_points"});
     m_ps_weight = m_pool->put<double>({"cuba", "ps_weight"});
 
     // For each input declared in the configuration, create pool entries for p4 and type
     for (const auto& input: inputs) {
         LOG(debug) << "Input declared: " << input;
-        m_pool->current_module(input);
         m_inputs_p4.emplace(input, m_pool->put<LorentzVector>({input, "p4"}));
         m_inputs_type.emplace(input, m_pool->put<int64_t>({input, "type"}));
     }
 
     // Create input for met
-    m_pool->current_module("met");
     m_met = m_pool->put<LorentzVector>({"met", "p4"});
 
     // We now have a sorted list of module declaration, split into the different execution paths.
@@ -150,7 +147,6 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
                 params->raw_set("path", Path(module_instances.at(config_path_id)));
             }
 
-            m_pool->current_module(module_decl_it->name);
             try {
                 module_instances[*it].push_back(momemta::ModuleRegistry::get()
                                                               .find(module_decl_it->type).maker
@@ -165,9 +161,6 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     }
 
     m_modules = module_instances[DEFAULT_EXECUTION_PATH];
-
-    // Retrieve all the input tags for the components of the integrand
-    m_pool->current_module("momemta");
 
     for (const auto& component: integrands) {
         m_integrands.push_back(m_pool->get<double>(component));

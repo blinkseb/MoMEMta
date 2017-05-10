@@ -49,8 +49,6 @@ public:
 };
 
 std::shared_ptr<std::vector<double>> addPhaseSpacePoints(std::shared_ptr<Pool> pool) {
-    pool->current_module("cuba");
-
     auto ps_points = pool->put<std::vector<double>>({"cuba", "ps_points"});
     auto weight = pool->put<double>({"cuba", "ps_weight"});
 
@@ -68,8 +66,6 @@ std::shared_ptr<std::vector<double>> addPhaseSpacePoints(std::shared_ptr<Pool> p
 }
 
 std::shared_ptr<std::vector<LorentzVector>> addInputParticles(std::shared_ptr<Pool> pool) {
-    pool->current_module("input");
-
     auto inputs = pool->put<std::vector<LorentzVector>>({"input", "particles"});
 
     // Some random massive 4-vectors to be used by the tests
@@ -96,8 +92,6 @@ TEST_CASE("Modules", "[modules]") {
         module.name = type;
         module.type = type;
         module.parameters.reset(parameters->clone());
-
-        pool->current_module(module);
 
         auto result = momemta::ModuleRegistry::get().find(type).maker->create(pool, *parameters);
         REQUIRE(result.get());
