@@ -56,7 +56,8 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
 
     if (! all_parameters_valid) {
         // At least one set of parameters is invalid. Stop here
-        auto exception = lua::invalid_configuration_file("Validation of modules' parameters failed. Check the log output for more details on how to fix your configuration file.");
+        auto exception = lua::invalid_configuration_file("Validation of modules' parameters failed. "
+                "Check the log output for more details on how to fix your configuration file.");
         LOG(fatal) << exception.what();
 
         throw exception;
@@ -99,12 +100,6 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     graph::SortedModuleList modules_to_execute;
     graph::sort_modules(available_modules, module_instances_def, configuration.getPaths(), modules_to_execute);
 
-    // We now have a sorted list of module declaration, split into the different execution path
-    // We can now create a new instance of each module in the correct order. For that, we loop over the list of
-    // modules in reverse order, creating first modules belonging to the last execution path.
-    // We also replace on-the-fly the Looper `path` parameter with the actual list of module to execute, replacing
-    // the list of module declared in the configuration file
-
     // Initialize shared memory pool for modules
     m_pool.reset(new Pool());
 
@@ -125,12 +120,24 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
     m_pool->current_module("met");
     m_met = m_pool->put<LorentzVector>({"met", "p4"});
 
+    // We now have a sorted list of module declaration, split into the different execution paths.
+    // We can now create a new instance of each module in the correct order.
+
     // Keep track of the instantiated modules in their own execution path
     std::map<boost::uuids::uuid, std::vector<ModulePtr>> module_instances;
 
-    for (auto it = modules_to_execute.rbegin(); it != modules_to_execute.rend(); ++it) {
+    const auto& execution_paths = modules_to_execute.getPaths();
 
-        for (auto module_decl_it = it->second.begin(); module_decl_it != it->second.end(); ++module_decl_it) {
+    // The list of execution path is sorted in the order we must execute the modules (modules from the first path first,
+    // then modules from the second path, etc.)
+    // However, some modules (ie Loopers) except as argument an execution path containing a list of module instances.
+    // Since modules and paths are sorted based on execution order, such dependencies are always in a other execution path.
+    // To solve this, we iterate the execution paths in reverse order, creating first the last execution path, free of
+    // any dependencies. This way, we are sure to find the final list of modules already available when we need it.
+    for (auto it = execution_paths.rbegin(); it != execution_paths.rend(); ++it) {
+
+        const auto& modules = modules_to_execute.getModules(*it);
+        for (auto module_decl_it = modules.begin(); module_decl_it != modules.end(); ++module_decl_it) {
 
             std::unique_ptr<ParameterSet> params(module_decl_it->parameters->clone());
 
@@ -138,16 +145,14 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
                 // Switch the "path" parameter to the list of module properly instantiated
                 auto config_path_id = params->get<ExecutionPath>("path").id;
 
-                // Remove config path
-                params->remove("path");
-
-                // Insert the new one
+                // Replace the `path` parameter with the list of modules
+                // Since paths are sorted and we iterate backwards, we are sure to find an existing path.
                 params->raw_set("path", Path(module_instances.at(config_path_id)));
             }
 
             m_pool->current_module(module_decl_it->name);
             try {
-                module_instances[it->first].push_back(momemta::ModuleRegistry::get()
+                module_instances[*it].push_back(momemta::ModuleRegistry::get()
                                                               .find(module_decl_it->type).maker
                                                               ->create(m_pool, *params));
             } catch (...) {
@@ -157,7 +162,6 @@ MoMEMta::MoMEMta(const Configuration& configuration) {
                 std::rethrow_exception(std::current_exception());
             }
         }
-
     }
 
     m_modules = module_instances[DEFAULT_EXECUTION_PATH];

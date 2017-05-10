@@ -9,8 +9,27 @@
 #include <string>
 #include <vector>
 
+#include <boost/functional/hash.hpp>
+
 /// Generic graph representation of the module hierarchy
 namespace graph {
+
+class SortedModuleList {
+
+public:
+    void addModule(const boost::uuids::uuid& path, const Configuration::ModuleDecl& module);
+    const std::vector<boost::uuids::uuid>& getPaths() const;
+    const std::vector<Configuration::ModuleDecl>& getModules(const boost::uuids::uuid& path) const;
+
+private:
+    std::unordered_map<
+            boost::uuids::uuid,
+            std::vector<Configuration::ModuleDecl>,
+            boost::hash<boost::uuids::uuid>
+    > modules;
+
+    std::vector<boost::uuids::uuid> sorted_execution_paths;
+};
 
 /**
  * \brief Sort the list of modules declared in the configuration according to their dependencies.
@@ -29,8 +48,6 @@ namespace graph {
  * \sa momemta::ModuleRegistry::exportList()
  */
 
-// We can't use a map here as order of execution path is important
-typedef std::vector<std::pair<boost::uuids::uuid, std::vector<Configuration::ModuleDecl>>> SortedModuleList;
 void sort_modules(
         const momemta::ModuleList& available_modules,
         const std::vector<Configuration::ModuleDecl>& requested_modules,

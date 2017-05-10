@@ -338,21 +338,30 @@ void sort_modules(const momemta::ModuleList& available_modules,
         auto execution_path = execution_path_it == execution_paths.end() ? DEFAULT_EXECUTION_PATH :
                               (*execution_path_it)->id;
 
-        auto insert_it = std::find_if(modules.begin(), modules.end(),
-                                    [&execution_path](const SortedModuleList::value_type& p) {
-                                        return p.first == execution_path;
-                                    });
-
-        if (insert_it == modules.end()) {
-            // The execution path does not yet exist, insert it
-            modules.emplace_back(std::make_pair(execution_path, std::vector<Configuration::ModuleDecl>()));
-            insert_it = std::prev(modules.end());
-        }
-
-        assert(insert_it != modules.end());
-
-        insert_it->second.push_back(*it);
+        modules.addModule(execution_path, *it);
     }
+}
+
+void SortedModuleList::addModule(const boost::uuids::uuid& path, const Configuration::ModuleDecl& module) {
+    // Check if an entry already exists for the execution path.
+    auto map_it = modules.find(path);
+    if (map_it == modules.end()) {
+        // Add the path into the list of know path, keeping track of the order
+        sorted_execution_paths.emplace_back(path);
+
+        // Add the module into its path
+        modules[path].emplace_back(module);
+    } else {
+        map_it->second.emplace_back(module);
+    }
+}
+
+const std::vector<boost::uuids::uuid>& SortedModuleList::getPaths() const {
+    return sorted_execution_paths;
+}
+
+const std::vector<Configuration::ModuleDecl>& SortedModuleList::getModules(const boost::uuids::uuid& path) const {
+    return modules.at(path);
 }
 
 }
