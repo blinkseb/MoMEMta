@@ -66,6 +66,15 @@ SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g")
 SET(CMAKE_C_FLAGS_DEBUG  "-O0 -g")
 
 # Find dependencies
+
+# We need python to bundle lua code
+
+# Start with python 2, if not found, fallback on python 3, otherwise fail
+find_package(PythonInterp 2.6)
+if (NOT PYTHONINTERP_FOUND)
+    find_package(PythonInterp 3 REQUIRED)
+endif()
+
 include(CMSSW)
 find_package(ROOT 5.34.09 REQUIRED)
 find_package(LHAPDF 6.0 REQUIRED)
@@ -94,8 +103,6 @@ if (PYTHON_BINDINGS)
             set_property(TARGET Python::libs PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${PYTHON_INCLUDE_PATH})
             set_property(TARGET Python::libs PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${PYTHON_INCLUDE_PATH})
         endif()
-
-        find_package(PythonInterp 2.6)
 
         find_package(Boost 1.54 COMPONENTS python)
         if (NOT Boost_PYTHON_FOUND)
@@ -218,8 +225,8 @@ file(GLOB LUA_FILES
         )
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/lua_code.cc
-        COMMAND ${CMAKE_CURRENT_LIST_DIR}/scripts/embedLua.py
-            ARGS -i ${CMAKE_CURRENT_LIST_DIR}/lua -o ${CMAKE_CURRENT_BINARY_DIR}/generated/lua_code.cc
+        COMMAND ${PYTHON_EXECUTABLE}
+            ARGS ${CMAKE_CURRENT_LIST_DIR}/scripts/embedLua.py -i ${CMAKE_CURRENT_LIST_DIR}/lua -o ${CMAKE_CURRENT_BINARY_DIR}/generated/lua_code.cc
         DEPENDS
             ${CMAKE_CURRENT_LIST_DIR}/scripts/embedLua.py
             ${LUA_FILES}
