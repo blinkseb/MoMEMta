@@ -71,7 +71,7 @@ class ILuaCallback {
          *
          * will result in a call to this function
          */
-        virtual void onNewPath(ExecutionPath* path) = 0;
+        virtual void onNewPath(const ExecutionPath& path) = 0;
 
         /** \brief A new integration dimension is requested in the configuration file
          *

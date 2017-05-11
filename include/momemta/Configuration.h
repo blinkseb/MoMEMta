@@ -64,7 +64,7 @@ class Configuration {
         std::vector<std::string> getInputs() const;
 
         /// \return The list of Paths as declared in the configuration
-        std::vector<ExecutionPath*> getPaths() const;
+        std::vector<std::shared_ptr<ExecutionPath>> getPaths() const;
 
         /// \return The number of integration dimensions required in the configuration
         size_t getNDimensions() const;
@@ -94,7 +94,7 @@ class Configuration {
         std::shared_ptr<ParameterSet> global_parameters;
         std::shared_ptr<ParameterSet> cuba_configuration;
         std::vector<InputTag> integrands;
-        std::vector<ExecutionPath*> paths;
+        std::vector<std::shared_ptr<ExecutionPath>> paths;
         std::vector<std::string> inputs;
         std::size_t n_dimensions;
 };

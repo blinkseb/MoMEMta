@@ -61,7 +61,7 @@ class LuaCallbackMock: public ILuaCallback {
             integrands.push_back(tag);
         }
 
-        virtual void onNewPath(ExecutionPath* path) override {
+        virtual void onNewPath(const ExecutionPath& path) override {
             paths.push_back(path);
         }
 
@@ -75,7 +75,7 @@ class LuaCallbackMock: public ILuaCallback {
 
         std::vector<std::pair<std::string, std::string>> modules;
         std::vector<InputTag> integrands;
-        std::vector<ExecutionPath*> paths;
+        std::vector<ExecutionPath> paths;
         std::size_t n_dimensions;
         std::vector<std::string> inputs;
 };

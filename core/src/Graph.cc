@@ -139,7 +139,7 @@ bool isConnectedTo(Graph& g, vertex_t vertex, vertex_t to) {
 
 void sort_modules(const momemta::ModuleList& available_modules,
                   const std::vector<Configuration::ModuleDecl>& requested_modules,
-                  const std::vector<ExecutionPath*>& execution_paths,
+                  const std::vector<std::shared_ptr<ExecutionPath>>& execution_paths,
                   SortedModuleList& modules) {
 
 
@@ -322,7 +322,7 @@ void sort_modules(const momemta::ModuleList& available_modules,
         // Find in which execution path this module is. If it's not found inside any execution path
         // declared in the configuration, then the module is assigned to the default execution path.
 
-        static auto find_module_in_path = [&vertex, &g](const ExecutionPath* p) -> bool {
+        static auto find_module_in_path = [&vertex, &g](std::shared_ptr<ExecutionPath> p) -> bool {
             // Returns true if the module is inside the execution path `p`, False otherwise
             auto it = std::find_if(p->elements.begin(), p->elements.end(),
                                    [&vertex, &g](const std::string& element) -> bool {

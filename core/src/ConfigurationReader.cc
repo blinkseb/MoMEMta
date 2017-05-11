@@ -94,8 +94,8 @@ void ConfigurationReader::onIntegrandDeclared(const InputTag& tag) {
     configuration.integrands.push_back(tag);
 }
 
-void ConfigurationReader::onNewPath(ExecutionPath* path) {
-    configuration.paths.push_back(path);
+void ConfigurationReader::onNewPath(const ExecutionPath& path) {
+    configuration.paths.push_back(std::make_shared<ExecutionPath>(path));
 }
 
 void ConfigurationReader::addIntegrationDimension() {

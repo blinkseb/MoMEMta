@@ -87,7 +87,7 @@ std::vector<InputTag> Configuration::getIntegrands() const {
     return integrands;
 }
 
-std::vector<ExecutionPath*> Configuration::getPaths() const {
+std::vector<std::shared_ptr<ExecutionPath>> Configuration::getPaths() const {
     return paths;
 }
 

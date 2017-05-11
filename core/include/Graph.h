@@ -51,7 +51,7 @@ private:
 void sort_modules(
         const momemta::ModuleList& available_modules,
         const std::vector<Configuration::ModuleDecl>& requested_modules,
-        const std::vector<ExecutionPath*>& execution_paths,
+        const std::vector<std::shared_ptr<ExecutionPath>>& execution_paths,
         SortedModuleList& modules
 );
 

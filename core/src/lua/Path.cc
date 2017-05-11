@@ -69,7 +69,7 @@ int lua::path_new(lua_State* L) {
 
     void* cfg_ptr = lua_touserdata(L, lua_upvalueindex(1));
     ILuaCallback* callback = static_cast<ILuaCallback*>(cfg_ptr);
-    callback->onNewPath(*pPath);
+    callback->onNewPath(**pPath);
 
     return 1;
 }
