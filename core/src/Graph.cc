@@ -34,6 +34,7 @@ struct Vertex {
     std::string name; // Unique name of the module
     std::string type; // Module type
     momemta::ModuleList::value_type def;
+    Configuration::ModuleDecl decl;
 };
 
 struct Edge {
@@ -47,6 +48,10 @@ typedef boost::graph_traits<Graph>::vertex_descriptor vertex_t;
 typedef boost::graph_traits<Graph>::edge_descriptor edge_t;
 typedef boost::graph_traits<Graph>::out_edge_iterator out_edge_iterator_t;
 typedef boost::graph_traits<Graph>::in_edge_iterator in_edge_iterator_t;
+
+class incomplete_looper_path: public std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
 
 class vertex_writer {
 public:
@@ -79,9 +84,11 @@ public:
     void operator()(std::ostream& out, const VertexOrEdge& e) const {
         std::string color = "black";
         std::string style = "solid";
+        std::string extra = "";
 
         if (graph[e].virt) {
             style = "invis";
+            extra = "constraint=false";
         }
 
         out << "[color=\"" << color << "\",style=\"" << style
@@ -91,7 +98,9 @@ private:
     Graph graph;
 };
 
-void graphviz_export(const Graph& g, const std::string& filename) {
+void graphviz_export(const Graph& g,
+                     const std::vector<std::shared_ptr<ExecutionPath>>& paths,
+                     const std::string& filename) {
 
     std::ofstream f(filename.c_str());
     boost::write_graphviz(f, g, vertex_writer(g), edge_writer(g), boost::default_writer(), boost::get(&Vertex::id, g));
@@ -137,16 +146,46 @@ bool isConnectedTo(Graph& g, vertex_t vertex, vertex_t to) {
     return isConnectedToByIn(g, vertex, to);
 }
 
+/**
+ * Test if two vertices are connected directly (an edge exists between them). Link is assumed to be from -> to.
+ * \param g
+ * \param from
+ * \param to
+ * \return
+ */
+bool isConnectedDirectlyTo(Graph& g, vertex_t from, vertex_t to) {
+    out_edge_iterator_t o, o_end;
+    std::tie(o, o_end) = boost::out_edges(from, g);
+
+    for (; o != o_end; ++o) {
+        vertex_t target = boost::target(*o, g);
+        if (target == to)
+            return true;
+    }
+
+    return false;
+}
+
+bool checkInPath(const Configuration::ModuleDecl& looper_decl, const std::string& module_name) {
+
+    const auto& looper_path = looper_decl.parameters->get<ExecutionPath>("path");
+
+    auto it = std::find_if(looper_path.elements.begin(), looper_path.elements.end(),
+                           [&module_name](const std::string& m) {
+                               return m == module_name;
+                           });
+
+    return it != looper_path.elements.end();
+}
+
 void sort_modules(const momemta::ModuleList& available_modules,
                   const std::vector<Configuration::ModuleDecl>& requested_modules,
                   const std::vector<std::shared_ptr<ExecutionPath>>& execution_paths,
-                  SortedModuleList& modules) {
+                  SortedModuleList& modules,
+                  const std::string& output /* = ""*/) {
 
 
-    Graph g;
-    uint32_t id = 0;
-
-    auto get_module_def = [&available_modules](const std::string& module_type) {
+    static auto get_module_def = [&available_modules](const std::string& module_type) {
 
         auto it = std::find_if(available_modules.begin(), available_modules.end(),
                                [&module_type](const momemta::ModuleList::value_type& m) {
@@ -154,8 +193,12 @@ void sort_modules(const momemta::ModuleList& available_modules,
                                });
 
         assert(it != available_modules.end());
+
         return *it;
     };
+
+    Graph g;
+    uint32_t id = 0;
 
     // Keep a map of all the vertices for easy access
     std::unordered_map<std::string, vertex_t> vertices;
@@ -171,6 +214,9 @@ void sort_modules(const momemta::ModuleList& available_modules,
 
         // Attach module definition to the vertex
         vertex.def = get_module_def(module.type);
+
+        // Attach module declaration to the vertex
+        vertex.decl = module;
 
         vertices.emplace(module.name, v);
     }
@@ -258,6 +304,31 @@ void sort_modules(const momemta::ModuleList& available_modules,
     for (const auto& vertex: vertices) {
         if (g[vertex.second].type == "Looper") {
 
+            const auto& decl = g[vertex.second].decl;
+
+            // Retrieve the looper path
+            const auto& looper_path = decl.parameters->get<ExecutionPath>("path");
+
+            // Add virtual link between the looper and all module inside its execution path
+            for (const auto& m: looper_path.elements) {
+
+                auto module_it = vertices.find(m);
+                if (module_it == vertices.end()) {
+                    LOG(warning) << "Module '" << m << "' present in Looper '" << decl.name << "' execution path does "
+                                "not exists";
+                    continue;
+                }
+
+                auto module_vertex = module_it->second;
+                if (!isConnectedDirectlyTo(g, vertex.second, module_vertex)) {
+                    edge_t e;
+                    bool inserted;
+                    std::tie(e, inserted) = boost::add_edge(vertex.second, module_vertex, g);
+                    g[e].description = "virtual link (module in path)";
+                    g[e].virt = true;
+                }
+            }
+
             out_edge_iterator_t e, e_end;
             std::tie(e, e_end) = boost::out_edges(vertex.second, g);
 
@@ -300,10 +371,13 @@ void sort_modules(const momemta::ModuleList& available_modules,
         boost::topological_sort(g, std::front_inserter(sorted_vertices),
                                 boost::vertex_index_map(boost::get(&Vertex::id, g)));
     } catch (...) {
-        graphviz_export(g, "graph.debug");
+        graphviz_export(g, execution_paths, "graph.debug");
         LOG(fatal) << "Exception while sorting the graph. Graphviz representation saved as graph.debug";
         throw;
     }
+
+    if (!output.empty())
+        graphviz_export(g, execution_paths, output);
 
     // Remove vertices corresponding to internal modules
     sorted_vertices.erase(std::remove_if(sorted_vertices.begin(), sorted_vertices.end(),
@@ -311,13 +385,60 @@ void sort_modules(const momemta::ModuleList& available_modules,
                                              return g[vertex].def.internal;
                                          }), sorted_vertices.end());
 
-    for (auto vertex: sorted_vertices) {
-        auto it = std::find_if(requested_modules.begin(), requested_modules.end(),
-                               [&vertex, &g](const Configuration::ModuleDecl& module) -> bool {
-                                   return module.name == g[vertex].name;
-                               });
+    // Ensure all the modules using a Looper output are present in the looper path
+    std::map<vertex_t, std::vector<vertex_t>> modules_not_in_path;
+    for (const auto& vertex: sorted_vertices) {
+        if (g[vertex].type == "Looper") {
 
-        assert(it != requested_modules.end());
+            const auto& decl = g[vertex].decl;
+
+            out_edge_iterator_t e, e_end;
+            std::tie(e, e_end) = boost::out_edges(vertex, g);
+
+            // Iterator over all edges connected to this Looper vertex
+            for (; e != e_end; ++e) {
+                auto target = boost::target(*e, g);
+
+                // Check if target is inside the looper path
+                if (! checkInPath(decl, g[target].name)) {
+                    auto& loopers = modules_not_in_path[target];
+                    auto it = std::find(loopers.begin(), loopers.end(), vertex);
+                    if (it == loopers.end())
+                        loopers.push_back(vertex);
+                } else {
+                    modules_not_in_path.erase(target);
+                }
+            }
+        }
+    }
+
+    if (modules_not_in_path.size() != 0) {
+        // Only print a message for the first module not in path
+        auto it = modules_not_in_path.begin();
+
+        auto target = g[it->first];
+
+        std::stringstream loopers;
+        for (size_t i = 0; i < it->second.size(); i++) {
+            loopers << "'" << g[it->second[i]].name << "'";
+            if (i != it->second.size() - 1)
+                loopers << ", ";
+        }
+
+        std::string plural = it->second.size() ? "s" : "";
+        std::string one_of_the = it->second.size() ? "one of the" : "the";
+
+        LOG(fatal) << "Module '" << target.name << "' is configured to use Looper " << loopers.str()
+                   << " output" << plural << ", but is not actually part of the Looper" << plural << " execution path. This will lead to undefined "
+                   << "behavior. You can fix the issue by adding the module '"
+                   << target.name
+                   << "' to " << one_of_the << " Looper" << plural << " execution path";
+
+        throw incomplete_looper_path("A module is using the looper output but not actually part of its "
+                                             "execution path");
+    }
+
+    for (auto vertex: sorted_vertices) {
 
         // Find in which execution path this module is. If it's not found inside any execution path
         // declared in the configuration, then the module is assigned to the default execution path.
@@ -338,7 +459,10 @@ void sort_modules(const momemta::ModuleList& available_modules,
         auto execution_path = execution_path_it == execution_paths.end() ? DEFAULT_EXECUTION_PATH :
                               (*execution_path_it)->id;
 
-        modules.addModule(execution_path, *it);
+        // The first declared path must always be the default one, otherwise we are in trouble
+        assert(!modules.getPaths().empty() || execution_path == DEFAULT_EXECUTION_PATH);
+
+        modules.addModule(execution_path, g[vertex].decl);
     }
 }
 
