@@ -92,10 +92,79 @@ public:
         }
 
         out << "[color=\"" << color << "\",style=\"" << style
-            << "\",label=\"" << graph[e].description << "\"]";
+            << "\",label=\"" << graph[e].description << "\"";
+
+        if (!extra.empty()) {
+            out << "," << extra;
+        }
+
+        out << "]";
     }
 private:
     Graph graph;
+};
+
+class properties_writer {
+public:
+    properties_writer(Graph g,
+                      const std::vector<std::shared_ptr<ExecutionPath>>& paths):
+            graph(g), paths(paths) {}
+
+    void operator()(std::ostream& out) const {
+
+        size_t index = 0;
+        for (const auto& path: paths) {
+
+            out << "subgraph cluster_" << index << " {" << std::endl;
+
+            out << R"(style=filled; fillcolor="#3E606F40";)" << std::endl;
+
+            auto looper_vertex = find_looper(path->id);
+
+            if (looper_vertex != boost::graph_traits<Graph>::null_vertex())
+                out << "    label=\"" << graph[looper_vertex].name << " execution path\";" << std::endl;
+
+            out << "    ";
+            for (const auto& e: path->elements) {
+                auto vertex = find_vertex(e);
+                out << graph[vertex].id << "; ";
+            }
+
+            out << std::endl;
+            out << "}" << std::endl;
+
+            index++;
+        }
+    }
+
+    vertex_t find_vertex(const std::string& name) const {
+        typename boost::graph_traits<Graph>::vertex_iterator vtx_it, vtx_it_end;
+
+        for(boost::tie(vtx_it, vtx_it_end) = boost::vertices(graph); vtx_it != vtx_it_end; ++vtx_it) {
+            if (graph[*vtx_it].name == name)
+                return *vtx_it;
+        }
+
+        return boost::graph_traits<Graph>::null_vertex();
+    }
+
+    vertex_t find_looper(const boost::uuids::uuid& path) const {
+        typename boost::graph_traits<Graph>::vertex_iterator vtx_it, vtx_it_end;
+
+        for(boost::tie(vtx_it, vtx_it_end) = boost::vertices(graph); vtx_it != vtx_it_end; ++vtx_it) {
+            if (graph[*vtx_it].type == "Looper") {
+                const auto& looper_path = graph[*vtx_it].decl.parameters->get<ExecutionPath>("path");
+                if (looper_path.id == path)
+                    return *vtx_it;
+            }
+        }
+
+        return boost::graph_traits<Graph>::null_vertex();
+    }
+
+private:
+    Graph graph;
+    const std::vector<std::shared_ptr<ExecutionPath>> paths;
 };
 
 void graphviz_export(const Graph& g,
@@ -103,7 +172,8 @@ void graphviz_export(const Graph& g,
                      const std::string& filename) {
 
     std::ofstream f(filename.c_str());
-    boost::write_graphviz(f, g, vertex_writer(g), edge_writer(g), boost::default_writer(), boost::get(&Vertex::id, g));
+    boost::write_graphviz(f, g, vertex_writer(g), edge_writer(g), properties_writer(g, paths),
+                          boost::get(&Vertex::id, g));
 }
 
 
