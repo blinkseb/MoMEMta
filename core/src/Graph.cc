@@ -25,6 +25,8 @@
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/topological_sort.hpp>
 
+#include <array>
+
 namespace graph {
 
 // Graph definitions
@@ -53,15 +55,19 @@ class incomplete_looper_path: public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-class vertex_writer {
+class graph_writer {
 public:
-    vertex_writer(Graph g) : graph(g) {}
+    graph_writer(Graph g,
+                 const std::vector<std::shared_ptr<ExecutionPath>>& paths):
+            graph(g), paths(paths) {}
 
-    template <class VertexOrEdge>
-    void operator()(std::ostream& out, const VertexOrEdge& v) const {
+
+    // Vertex writer
+    void writeVertex(std::ostream& out, const vertex_t& v) const {
         std::string shape = "ellipse";
         std::string color = "black";
         std::string style = "solid";
+        std::string extra = "";
 
         if (graph[v].def.internal) {
             shape = "rectangle";
@@ -69,19 +75,23 @@ public:
             style = "dashed";
         }
 
+        if (graph[v].type == "Looper") {
+            style = "filled";
+            extra = "fillcolor=\"" + path_colors.at(graph[v].decl.parameters->get<ExecutionPath>("path").id) + "\"";
+        }
+
         out << "[shape=\"" << shape << "\",color=\"" << color << "\",style=\"" << style
-            << "\",label=\"" << graph[v].name << "\"]";
+            << "\",label=\"" << graph[v].name << "\"";
+
+        if (!extra.empty()) {
+            out << "," << extra;
+        }
+
+        out << "]";
     }
-private:
-    Graph graph;
-};
 
-class edge_writer {
-public:
-    edge_writer(Graph g) : graph(g) {}
-
-    template <class VertexOrEdge>
-    void operator()(std::ostream& out, const VertexOrEdge& e) const {
+    // Edge writer
+    void writeEdge(std::ostream& out, const edge_t& e) const {
         std::string color = "black";
         std::string style = "solid";
         std::string extra = "";
@@ -100,24 +110,18 @@ public:
 
         out << "]";
     }
-private:
-    Graph graph;
-};
 
-class properties_writer {
-public:
-    properties_writer(Graph g,
-                      const std::vector<std::shared_ptr<ExecutionPath>>& paths):
-            graph(g), paths(paths) {}
-
-    void operator()(std::ostream& out) const {
+    // Graph writer
+    void writeGraph(std::ostream& out) const {
 
         size_t index = 0;
+        size_t color_index = 0;
         for (const auto& path: paths) {
 
             out << "subgraph cluster_" << index << " {" << std::endl;
 
-            out << R"(style=filled; fillcolor="#3E606F40";)" << std::endl;
+            out << R"(style=filled; fillcolor=")" << colors[color_index] << R"(";)" << std::endl;
+            path_colors.emplace(path->id, colors[color_index]);
 
             auto looper_vertex = find_looper(path->id);
 
@@ -134,9 +138,13 @@ public:
             out << "}" << std::endl;
 
             index++;
+            color_index++;
+            if (color_index >= colors.size())
+                color_index = 0;
         }
     }
 
+private:
     vertex_t find_vertex(const std::string& name) const {
         typename boost::graph_traits<Graph>::vertex_iterator vtx_it, vtx_it_end;
 
@@ -162,9 +170,40 @@ public:
         return boost::graph_traits<Graph>::null_vertex();
     }
 
-private:
     Graph graph;
     const std::vector<std::shared_ptr<ExecutionPath>> paths;
+
+    mutable std::unordered_map<boost::uuids::uuid, std::string,
+                       boost::hash<boost::uuids::uuid>> path_colors;
+
+    const std::array<std::string, 5> colors = {{
+            "#BEEB9F",
+            "#ACF0F2",
+            "#F3FFE2",
+            "#79BD8F88",
+            "##EB7F0099"
+    }};
+};
+
+class graph_writer_wrapper {
+public:
+    graph_writer_wrapper(std::shared_ptr<graph_writer> writer):
+            writer(writer) {}
+
+    void operator()(std::ostream& out, const vertex_t& v) const {
+        writer->writeVertex(out, v);
+    }
+
+    void operator()(std::ostream& out, const edge_t& e) const {
+        writer->writeEdge(out, e);
+    }
+
+    void operator()(std::ostream& out) const {
+        writer->writeGraph(out);
+    }
+
+private:
+    std::shared_ptr<graph_writer> writer;
 };
 
 void graphviz_export(const Graph& g,
@@ -172,8 +211,9 @@ void graphviz_export(const Graph& g,
                      const std::string& filename) {
 
     std::ofstream f(filename.c_str());
-    boost::write_graphviz(f, g, vertex_writer(g), edge_writer(g), properties_writer(g, paths),
-                          boost::get(&Vertex::id, g));
+    auto writer = std::make_shared<graph_writer>(g, paths);
+    boost::write_graphviz(f, g, graph_writer_wrapper(writer), graph_writer_wrapper(writer),
+                          graph_writer_wrapper(writer), boost::get(&Vertex::id, g));
 }
 
 
