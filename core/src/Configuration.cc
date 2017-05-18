@@ -140,3 +140,8 @@ Configuration Configuration::freeze() const {
 
     return c;
 }
+
+// Setters
+void Configuration::setNDimensions(size_t n) {
+    n_dimensions = n;
+}

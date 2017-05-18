@@ -69,6 +69,9 @@ class Configuration {
         /// \return The number of integration dimensions required in the configuration
         size_t getNDimensions() const;
 
+        // FIXME: private?
+        void setNDimensions(size_t n);
+
         /**
          * \brief Copy constructor.
          *
