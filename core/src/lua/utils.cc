@@ -30,6 +30,7 @@
 
 #include <LibraryManager.h>
 #include <lua/ParameterSetParser.h>
+#include <lua/bindings/InputTag.h>
 #include <lua/bindings/Path.h>
 #include <lua/bindings/Types.h>
 
@@ -549,6 +550,7 @@ namespace lua {
 
         // C++ -> lua bindings of some classes
         path_register(L, ptr);
+        inputtag_register(L);
     }
 
     std::shared_ptr<lua_State> init_runtime(ILuaCallback* callback) {

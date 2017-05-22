@@ -211,6 +211,7 @@ set(MOMEMTA_SOURCES
     "core/src/lua/LazyTable.cc"
     "core/src/lua/ParameterSetParser.cc"
     "core/src/lua/utils.cc"
+    "core/src/lua/bindings/InputTag.cc"
     "core/src/lua/bindings/Path.cc"
     "core/src/lua/bindings/Types.cc"
     "core/src/registry/ModuleDefBuilder.cc"

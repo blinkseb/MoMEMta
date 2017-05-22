@@ -55,14 +55,14 @@ struct InputTag {
         /*! \brief Check if a given string represent an InputTag.
          *
          * InputTag are represented as string in the following format:
-         * 
+         *
          * ```
          * Module::Parameter[/Index]
          * ```
          *
          * Delimiter is `::` between the module's name and output, and `/` between the output and the index.
          *
-         * \warning **Index start at 1, and not at 0** like in C++. We follow here the Lua conventation for indexing.
+         * \warning **Index start at 1, and not at 0** like in C++. We follow here the Lua convention for indexing.
          *
          * \param tag The string to test
          *
