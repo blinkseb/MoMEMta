@@ -148,4 +148,15 @@ class MoMEMta {
         std::unordered_map<std::string, std::shared_ptr<int64_t>> m_inputs_type;
         std::shared_ptr<LorentzVector> m_met;
         std::vector<Value<double>> m_integrands;
+
+        // DEBUG
+        std::vector<std::string> permunation_names;
+        std::map<std::string, std::reference_wrapper<const momemta::Particle>> m_particles;
+        std::vector<std::vector<size_t>> all_permutations;
+
+        //std::mt19937 random_generator(std::random_device());
+        std::mt19937 random_generator;
+        std::unique_ptr<std::uniform_int_distribution<size_t>> random_distribution;
+
+        std::map<size_t, double> permutation_result;
 };

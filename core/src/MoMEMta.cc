@@ -182,6 +182,8 @@ std::vector<std::pair<double, double>> MoMEMta::computeWeights(const std::vector
         *m_inputs_type[p.name] = p.type;
 
         consumed_inputs.push_back(p.name);
+
+        m_particles.emplace(p.name, std::cref(p));
     }
 
     *m_met = met;
@@ -195,6 +197,15 @@ std::vector<std::pair<double, double>> MoMEMta::computeWeights(const std::vector
         mcResult[i] = 0;
         error[i] = 0;
     }
+
+    // DEBUG ; have fun with permutations
+    permunation_names = {"top_bjet1", "top_bjet2", "higgs_bjet1", "higgs_bjet2"};
+    std::vector<size_t> indices(permunation_names.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    do {
+        all_permutations.push_back(indices);
+    } while (std::next_permutation(indices.begin(), indices.end()));
+    random_distribution.reset(new std::uniform_int_distribution<size_t>(0, all_permutations.size() - 1));
 
     if (m_n_dimensions > 0) {
 
@@ -402,6 +413,19 @@ std::vector<std::pair<double, double>> MoMEMta::computeWeights(const std::vector
         result.push_back( std::make_pair(mcResult[i], error[i]) );
     }
 
+    //double mean = 0;
+    //for (size_t i = 0; i < all_permutations.size(); i++) {
+        //LOG(info ) << "Result for perm " << i << ": " << permutation_result[i];
+        //LOG(info)
+            //<< permunation_names[all_permutations[i][0]] << " "
+            //<< permunation_names[all_permutations[i][1]] << " "
+            //<< permunation_names[all_permutations[i][2]] << " "
+            //<< permunation_names[all_permutations[i][3]];
+        
+        //mean += permutation_result[i];
+    //}
+    //LOG(info) << "Mean: " << mean / all_permutations.size();
+
     return result;
 }
 
@@ -414,6 +438,17 @@ int MoMEMta::integrand(const double* psPoints, double* results, const double* we
         // Store phase-space weight into the pool
         *m_ps_weight = *weights;
     }
+
+    // Have fun with permutations
+    //size_t permutation = (*random_distribution)(random_generator);
+    //const auto& permutation_indices = all_permutations[permutation];
+
+    //LOG(info) << all_permutations.size() << "  " << permutation;
+    //LOG(info) << all_permutations[permutation][0];
+
+    //for (size_t i = 0; i < permunation_names.size(); i++) {
+        //*m_inputs_p4[permunation_names[i]] = m_particles.at(permunation_names[permutation_indices[i]]).get().p4;
+    //}
 
     auto status = m_computation_graph->execute();
 
@@ -428,6 +463,8 @@ int MoMEMta::integrand(const double* psPoints, double* results, const double* we
         for (size_t i = 0; i < m_n_components; i++)
             results[i] = *(m_integrands[i]);
     }
+
+    //permutation_result[permutation] += results[0] * *weights;
 
     return return_value;
 }
